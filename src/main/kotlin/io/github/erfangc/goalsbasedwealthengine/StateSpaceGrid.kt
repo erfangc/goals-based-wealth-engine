@@ -8,38 +8,6 @@ import kotlin.math.ln
 import kotlin.math.pow
 
 /**
- * This represents a single C(t) in the vector C
- */
-data class KnownCashflow(val t: Int, val amount: Double)
-
-data class Node(
-        /**
-         * The time coordinate
-         */
-        val t: Int,
-        /**
-         * The wealth coordinate
-         */
-        val i: Int,
-        /**
-         * The wealth at this node
-         */
-        val w: Double,
-        /**
-         * The chosen mu (or expected return on the efficient frontier at this node)
-         */
-        val mu: Double,
-        /**
-         * The probability of achieving investment goal at this node
-         */
-        val v: Double,
-        /**
-         * Link to the nodes that comes immediately after in time. If null then this is the final set of nodes where t = T
-         */
-        val nextNodes: List<Node>? = null
-)
-
-/**
  * StateSpaceGrid holds information about the state space
  *
  * Each state space represents a potential wealth level at a potential time. Information can then be derived /
@@ -88,7 +56,7 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
     private val nodes: MutableList<MutableList<Node>> = {
 
         // rhoGrid is the density parameter that controls how sparse and dense the state grid is
-        val rhoGrid = 15.0
+        val rhoGrid = 3.0
         val increment = sigmaMin / rhoGrid
 
         // walk up from ln(wMin) -> ln(wMax) by adding 'increment', where ln = natural log
@@ -145,7 +113,14 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
         }.toMutableList()
     }()
 
-    fun optimize(): Node {
+    /**
+     * Uses the information given to this class to derive an optimal
+     * portfolio Node object
+     *
+     * This object should contain the mu parameter that forms the optimal portfolio (as defined by probability of achieving goals)
+     * when chosen from the EfficientFrontier
+     */
+    fun optimizeAndGetRootNode(): Node {
         // starting a t-1, iterate on all mu(s) to find the max one
         val increment = (muMax - muMin) / 15.0
         val musToTry = (0 until 15).map { i -> muMin + i * increment}
@@ -159,7 +134,9 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
         //
 
         var i = 0
-        var t = nodes.size - 2 // start at t = T - 1 (nodes.size - 1 = T)
+
+        // start at t = T - 1 (nodes.size - 1 = T)
+        var t = nodes.size - 2
         var currentNode: Node
         do {
             currentNode = nodes[t][i]
@@ -202,6 +179,9 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
      * to its 'nextNodes'
      */
     private fun v(currentNode: Node, mu: Double): Double {
+        // if the nextNodes is null that means we are at the end of the the investment horizon
+        // in this case, the "v"s are determined already (they are either 0 or 1 depending on whether the goal have been achieved)
+
         val nextNodes = currentNode.nextNodes ?: return currentNode.v
         // memoize the sum of all points on the density function touched by next set of nodes
         // this denominator is used to ensure transition probabilities sum to 1

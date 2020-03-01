@@ -7,17 +7,6 @@ import kotlin.math.sqrt
 object MathUtil {
 
     /**
-     * Creates a function that is essentially a brownian process parametrized
-     * which in turn accepts t and a z (or realization of a normal random)
-     */
-    fun brownianFactory(mu: Double, sigma: Double): (Double, Double) -> Double {
-        return {
-            t: Double, z: Double ->
-            exp((mu - sigma.pow(2.0) / 2) * t + sigma * sqrt(t) * z)
-        }
-    }
-
-    /**
      * Equation 2
      *
      * Creates a function that is essentially a brownian process parametrized (and scaled by an initial wealth)

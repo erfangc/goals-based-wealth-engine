@@ -5,12 +5,12 @@ import org.apache.commons.math3.linear.MatrixUtils
 import kotlin.math.pow
 
 /**
+ * This class implements Equation 1
+ *
  * This is a class that represents an efficient frontier that allows conversion from
  * arbitrary return levels to a corresponding vol level on the frontier
  *
  * This class accepts vector of expected returns & a square covariance matrix
- *
- * This class implements Equation 1
  */
 class EfficientFrontier(covarianceMatrix: Array<DoubleArray>, expectedReturns: DoubleArray) {
 
