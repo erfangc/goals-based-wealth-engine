@@ -24,7 +24,6 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
     private val muMax = efficientFrontier.muMax()
     private val sigmaMax = efficientFrontier.sigma(muMax)
     private val sigmaMin = efficientFrontier.sigma(muMin)
-    private val threeSigma = 3 * sigmaMax
 
     /**
      * Equation 3
@@ -34,7 +33,7 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
         // select min out of all time
         0.rangeTo(investmentHorizon).map { t ->
             // TODO take into account cash flows
-            w(t.toDouble(), -threeSigma)
+            w(t.toDouble(), -3.0)
         }.min() ?: throw IllegalStateException()
     }()
 
@@ -45,7 +44,7 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
         val w = brownianWealthFactory(initialWealth, muMin, sigmaMax)
         // select min out of all time
         0.rangeTo(investmentHorizon).map { t ->
-            w(t.toDouble(), threeSigma)
+            w(t.toDouble(), 3.0)
         }.max() ?: throw IllegalStateException()
     }()
 
@@ -67,14 +66,15 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
         }
 
         // find the smallest shift necessary so that at least 1 node aligns with initial wealth
-        val shift = wealthStates
-                .mapIndexed { i, wealth -> i to abs(wealth - initialWealth) }
+        val mapIndexed = wealthStates
+                .mapIndexed { i, wealth -> i to abs(wealth - ln(initialWealth)) }
+        val shift = mapIndexed
                 .minBy { it.second }?.let {
-                    wealthStates[it.first] - initialWealth
+                    wealthStates[it.first] - ln(initialWealth)
                 } ?: throw IllegalStateException()
 
         // in shifted wealth states we also undo the natural log transformation we did earlier
-        val shiftedWealthStates = wealthStates.map { exp(it + shift) }
+        val shiftedWealthStates = wealthStates.map { exp(it - shift) }
 
         val nodes = 0.rangeTo(investmentHorizon).map { t ->
             shiftedWealthStates.mapIndexed { i, w ->
@@ -96,21 +96,10 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
                         mu = 0.0,
                         v = v
                 )
-            }
-        }
-
-        // link the nodes
-        nodes.map {
-            it.map { node ->
-                val t = node.t
-                val nextNodes = if (t != investmentHorizon) {
-                    nodes[t + 1]
-                } else {
-                    null
-                }
-                node.copy(nextNodes = nextNodes)
             }.toMutableList()
         }.toMutableList()
+
+        nodes
     }()
 
     /**
@@ -143,9 +132,10 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
             // iterate to find the best mu
             val (mu, v) = musToTry.map { mu ->
                 mu to v(currentNode, mu)
-            }.minBy { it.second } ?: throw IllegalStateException()
+            }.maxBy { it.second } ?: throw IllegalStateException()
             nodes[t][i] = currentNode.copy(mu = mu, v = v)
-            if (i <= nodes[t].size - 1) {
+            currentNode = nodes[t][i]
+            if (i < nodes[t].size - 1) {
                 i++
             } else {
                 i = 0
@@ -166,11 +156,12 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
      *
      * This is not the transition probability but an input to it
      */
-    private fun pHat(nextNode: Node, currentNode: Node, mu: Double): Double {
+    fun pHat(nextNode: Node, currentNode: Node, mu: Double): Double {
         val sigma = efficientFrontier.sigma(mu)
         val wi = currentNode.w
         val wj = nextNode.w
-        val z = ln(wj / wi) - (mu - sigma.pow(2.0) / 2) / sigma
+        val z = (ln(wj / wi) - (mu - sigma.pow(2.0) / 2)) / sigma
+//        println("wi=$wi wj=$wj mu=$mu sigma=$sigma z=$z ${z * sigma + mu}")
         return nd.density(z)
     }
 
@@ -182,17 +173,29 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
         // if the nextNodes is null that means we are at the end of the the investment horizon
         // in this case, the "v"s are determined already (they are either 0 or 1 depending on whether the goal have been achieved)
 
-        val nextNodes = currentNode.nextNodes ?: return currentNode.v
+        val nextNodes = nextNodes(currentNode) ?: return currentNode.v
+
         // memoize the sum of all points on the density function touched by next set of nodes
         // this denominator is used to ensure transition probabilities sum to 1
         val total = nextNodes
-                .sumByDouble { nextNode -> pHat(nextNode, currentNode, mu) }
+                .sumByDouble { nextNode ->
+                    pHat(nextNode, currentNode, mu)
+                }
 
         // sum the next nodes' "v" weighted by probability derived from the prior steps
         return nextNodes.sumByDouble {
             nextNode ->
             val probability = pHat(nextNode, currentNode, mu) / total
             nextNode.v * probability
+        }
+    }
+
+    private fun nextNodes(currentNode: Node): List<Node>? {
+        val t = currentNode.t
+        return if (t >= investmentHorizon) {
+            null
+        } else {
+            nodes[t + 1]
         }
     }
 

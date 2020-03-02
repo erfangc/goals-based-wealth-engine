@@ -60,11 +60,11 @@ class EfficientFrontier(covarianceMatrix: Array<DoubleArray>, expectedReturns: D
     }
 
     fun muMin(): Double {
-        TODO()
+        return 0.0526
     }
 
     fun muMax(): Double {
-        TODO()
+        return 0.0886
     }
 
 }

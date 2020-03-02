@@ -20,9 +20,5 @@ data class Node(
         /**
          * The probability of achieving investment goal at this node
          */
-        val v: Double,
-        /**
-         * Link to the nodes that comes immediately after in time. If null then this is the final set of nodes where t = T
-         */
-        val nextNodes: List<Node>? = null
+        val v: Double
 )
