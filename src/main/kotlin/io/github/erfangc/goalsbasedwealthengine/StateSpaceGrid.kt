@@ -25,15 +25,21 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
     private val sigmaMax = efficientFrontier.sigma(muMax)
     private val sigmaMin = efficientFrontier.sigma(muMin)
 
+    private val knownCashflowsLookup = knownCashflows.associateBy { it.t }
+
+    private val c = {t: Int -> knownCashflowsLookup[t]?.amount ?: 0.0}
+
     /**
      * Equation 3
      */
     private val wMin = {
         val w = brownianWealthFactory(initialWealth, muMin, sigmaMax)
         // select min out of all time
-        0.rangeTo(investmentHorizon).map { t ->
-            // TODO take into account cash flows
-            w(t.toDouble(), -3.0)
+        0.rangeTo(investmentHorizon).map { tau ->
+            val cfs = (0..tau).sumByDouble {
+                t -> brownianWealthFactory(c(t), muMin, sigmaMax)((tau - t).toDouble(), -3.0)
+            }
+            w(tau.toDouble(), -3.0) + cfs
         }.min() ?: throw IllegalStateException()
     }()
 
@@ -41,10 +47,13 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
      * Equation 4
      */
     private val wMax = {
-        val w = brownianWealthFactory(initialWealth, muMin, sigmaMax)
+        val w = brownianWealthFactory(initialWealth, muMax, sigmaMax)
         // select min out of all time
-        0.rangeTo(investmentHorizon).map { t ->
-            w(t.toDouble(), 3.0)
+        0.rangeTo(investmentHorizon).map { tau ->
+            val cfs = (0..tau).sumByDouble {
+                t -> brownianWealthFactory(c(tau), muMax, sigmaMax)((tau - t).toDouble(), 3.0)
+            }
+            w(tau.toDouble(), 3.0) + cfs
         }.max() ?: throw IllegalStateException()
     }()
 
@@ -156,12 +165,14 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
      *
      * This is not the transition probability but an input to it
      */
-    fun pHat(nextNode: Node, currentNode: Node, mu: Double): Double {
+    fun pHat(nextNode: Node,
+             currentNode: Node,
+             t: Int,
+             mu: Double): Double {
         val sigma = efficientFrontier.sigma(mu)
         val wi = currentNode.w
         val wj = nextNode.w
-        val z = (ln(wj / wi) - (mu - sigma.pow(2.0) / 2)) / sigma
-//        println("wi=$wi wj=$wj mu=$mu sigma=$sigma z=$z ${z * sigma + mu}")
+        val z = (ln(wj / (wi + c(t))) - (mu - sigma.pow(2.0) / 2)) / sigma
         return nd.density(z)
     }
 
@@ -179,13 +190,13 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
         // this denominator is used to ensure transition probabilities sum to 1
         val total = nextNodes
                 .sumByDouble { nextNode ->
-                    pHat(nextNode, currentNode, mu)
+                    pHat(nextNode, currentNode, currentNode.t, mu)
                 }
 
         // sum the next nodes' "v" weighted by probability derived from the prior steps
         return nextNodes.sumByDouble {
             nextNode ->
-            val probability = pHat(nextNode, currentNode, mu) / total
+            val probability = pHat(nextNode, currentNode, currentNode.t, mu) / total
             nextNode.v * probability
         }
     }
