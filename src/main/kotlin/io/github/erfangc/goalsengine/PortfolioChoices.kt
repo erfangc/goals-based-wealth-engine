@@ -1,4 +1,4 @@
-package io.github.erfangc.goalsbasedwealthengine
+package io.github.erfangc.goalsengine
 
 /**
  * This interface defines a set of acceptable portfolio inputs used for goals based planning

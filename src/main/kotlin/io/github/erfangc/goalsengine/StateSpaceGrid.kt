@@ -1,6 +1,6 @@
-package io.github.erfangc.goalsbasedwealthengine
+package io.github.erfangc.goalsengine
 
-import io.github.erfangc.goalsbasedwealthengine.MathUtil.brownianWealthFactory
+import io.github.erfangc.goalsengine.MathUtil.brownianWealthFactory
 import org.apache.commons.math3.distribution.NormalDistribution
 import kotlin.math.abs
 import kotlin.math.exp

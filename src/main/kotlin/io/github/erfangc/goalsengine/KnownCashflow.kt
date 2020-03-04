@@ -1,4 +1,4 @@
-package io.github.erfangc.goalsbasedwealthengine
+package io.github.erfangc.goalsengine
 
 /**
  * This represents a single C(t) in the vector C

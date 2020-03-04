@@ -1,4 +1,4 @@
-package io.github.erfangc.goalsbasedwealthengine
+package io.github.erfangc.goalsengine
 
 import org.junit.jupiter.api.Test
 
