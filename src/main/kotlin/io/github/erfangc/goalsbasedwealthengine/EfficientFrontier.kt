@@ -4,6 +4,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import org.apache.commons.math3.linear.MatrixUtils
 import kotlin.math.pow
 
+
 /**
  * This class implements Equation 1
  *
@@ -12,7 +13,7 @@ import kotlin.math.pow
  *
  * This class accepts vector of expected returns & a square covariance matrix
  */
-class EfficientFrontier(covarianceMatrix: Array<DoubleArray>, expectedReturns: DoubleArray) {
+class EfficientFrontier(covarianceMatrix: Array<DoubleArray>, expectedReturns: DoubleArray) : PortfolioChoices {
 
     init {
         if (expectedReturns.size != covarianceMatrix.size) {
@@ -55,15 +56,21 @@ class EfficientFrontier(covarianceMatrix: Array<DoubleArray>, expectedReturns: D
     private val b = g.scalarMultiply(2.0).transpose().multiply(sigma).multiply(h).getEntry(0, 0)
     private val c = g.transpose().multiply(sigma).multiply(g).getEntry(0, 0)
 
-    fun sigma(mu: Double): Double {
+    override fun mus(): List<Double> {
+        // starting a t-1, iterate on all mu(s) to find the max one
+        val increment = (muMax() - muMin()) / 15.0
+        return (0 until 15).map { i -> muMin() + i * increment}
+    }
+
+    override fun sigma(mu: Double): Double {
         return (a * mu.pow(2.0) + b * mu + c).pow(0.5)
     }
 
-    fun muMin(): Double {
+    override fun muMin(): Double {
         return 0.0526
     }
 
-    fun muMax(): Double {
+    override fun muMax(): Double {
         return 0.0886
     }
 

@@ -14,16 +14,16 @@ import kotlin.math.pow
  * computed on each node on this grid such as the transition probability between nodes as well
  * as the probability of reaching the goal
  */
-class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
+class StateSpaceGrid(private val portfolioChoices: PortfolioChoices,
                      val knownCashflows: List<KnownCashflow>,
                      private val investmentHorizon: Int,
                      private val initialWealth: Double,
                      private val goal: Double) {
 
-    private val muMin = efficientFrontier.muMin()
-    private val muMax = efficientFrontier.muMax()
-    private val sigmaMax = efficientFrontier.sigma(muMax)
-    private val sigmaMin = efficientFrontier.sigma(muMin)
+    private val muMin = portfolioChoices.muMin()
+    private val muMax = portfolioChoices.muMax()
+    private val sigmaMax = portfolioChoices.sigma(muMax)
+    private val sigmaMin = portfolioChoices.sigma(muMin)
 
     private val knownCashflowsLookup = knownCashflows.associateBy { it.t }
 
@@ -119,9 +119,7 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
      * when chosen from the EfficientFrontier
      */
     fun optimizeAndGetRootNode(): Node {
-        // starting a t-1, iterate on all mu(s) to find the max one
-        val increment = (muMax - muMin) / 15.0
-        val musToTry = (0 until 15).map { i -> muMin + i * increment}
+        val musToTry = portfolioChoices.mus()
 
         //
         // define stopping condition:
@@ -169,7 +167,7 @@ class StateSpaceGrid(private val efficientFrontier: EfficientFrontier,
              currentNode: Node,
              t: Int,
              mu: Double): Double {
-        val sigma = efficientFrontier.sigma(mu)
+        val sigma = portfolioChoices.sigma(mu)
         val wi = currentNode.w
         val wj = nextNode.w
         val z = (ln(wj / (wi + c(t))) - (mu - sigma.pow(2.0) / 2)) / sigma
