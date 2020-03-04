@@ -9,17 +9,5 @@ data class Asset(
         val sedol: String? = null,
         val isin: String? = null,
         val type: String? = null,
-        val price: Double? = null,
-        val expectedReturn: Double? = null
+        val price: Double? = null
 )
-
-data class AssetTimeSeriesDatum(
-        val assetId: String,
-        val timestamp: String,
-        val field: Field,
-        val value: Double
-)
-
-enum class Field {
-    PRICE, RETURN
-}

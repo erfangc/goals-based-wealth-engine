@@ -1,16 +1,16 @@
-# Wealth Engine
+# Wealth engine
 
 Wealth Engine is a server that handles an advisor's workflow from connecting to accounts and automatically recommending
 portfolios to meet clients' investment goals and automatically reminding people to re-balance
 
-# Goals based investing
+# Goals engine
 
 We implement goals based investing as a potential step in the full proposal generation / re-balancing etc.
 journey
  
 The input to the goals based process is a set of goals such as retirement income and major purchases and
 an investment time horizon. The output from the goals based process is an ideal portfolio that maximizes the client's
-chance of obtaining that goal described by it mean return and volatility (mu / sigma)
+chance of obtaining that goal described by it mean return and volatility (μ / σ)
 
 We do not actually compute what this portfolio should be in terms of allocation until the next step (convex optimization)
 
@@ -48,4 +48,13 @@ Thus forming a two step process for constructing new portfolios:
 
 We produce scenarios, risk and asset allocation for all portfolios via the services in their respective packages
 
+# Supporting services
 
+To support the main workflow of creating proposals, we also have services that provide raw inputs and perform commonly used
+intermediate computations. These are enumerated below
+
+ - `covariance` package to provide covariance matrices
+ 
+ - `expectedreturns` package to provide asset expected returns
+ 
+ - `assets` package to provide asset indicative data such as price as well as time series information
