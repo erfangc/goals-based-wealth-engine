@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>io.github.erfangc</groupId>
-	<artifactId>goals-based-wealth-engine</artifactId>
+	<artifactId>wealth-engine</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>goals-based-wealth-engine</name>
+	<name>wealth-engine</name>
 	<description>Demo project for Spring Boot</description>
 
 	<properties>

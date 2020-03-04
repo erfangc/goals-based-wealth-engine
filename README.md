@@ -1,4 +1,4 @@
-# goals-based-wealth-engine
+# wealth-engine
 
 This is a Kotlin implementation of the dynamic programming approach for deriving optimal portfolio given an efficient frontier
 
