@@ -81,7 +81,7 @@ class AssetTimeSeriesService {
                 .groupBy { it.assetId }
                 .flatMap { (assetId, v) ->
                     val formatter = DateTimeFormatterBuilder()
-                            .appendPattern("yyyy-MM")
+                            .appendPattern("yyyyMM")
                             .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
                             .toFormatter()
                     v.groupBy {
