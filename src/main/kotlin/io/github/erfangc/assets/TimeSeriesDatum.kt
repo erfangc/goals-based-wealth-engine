@@ -1,8 +1,10 @@
 package io.github.erfangc.assets
 
-data class AssetTimeSeriesDatum(
+import java.time.LocalDate
+
+data class TimeSeriesDatum(
         val assetId: String,
-        val timestamp: String,
+        val date: LocalDate,
         val field: Field,
         val value: Double
 )

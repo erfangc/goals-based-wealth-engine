@@ -3,6 +3,16 @@
 Wealth Engine is a server that handles an advisor's workflow from connecting to accounts and automatically recommending
 portfolios to meet clients' investment goals and automatically reminding people to re-balance
 
+# Appendix
+
+## Time series data
+
+Example query:
+
+```
+wget https://query1.finance.yahoo.com/v7/finance/download/VXF?period1=1176163200&period2=1583366400&interval=1d&events=history&crumb=m6l2bRMEQLD
+```
+
 # High level proposal workflow
 
 [![](https://mermaid.ink/img/eyJjb2RlIjoiZ3JhcGggVERcbiAgQVtTdGFydF0gLS0-IEJbR29hbHMgRW5naW5lXVxuICBCIC0tPnzOvCwgz4MsIE90aGVyIGNvbnN0cmFpbnRzLCBFeGlzdGluZyBwb3J0Zm9saW9zfCBDW0NvbnZleCBPcHRpbWl6ZXJdXG4gIEMgLS0-fFByb3Bvc2VkIHBvcnRmb2xpb3N8IERbQW5hbHlzaXMgRW5naW5lc11cbiAgRCAtLT58QW5hbHlzaXN8IEVbRW5kXVxuXG5cdCIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In19)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoiZ3JhcGggVERcbiAgQVtTdGFydF0gLS0-IEJbR29hbHMgRW5naW5lXVxuICBCIC0tPnzOvCwgz4MsIE90aGVyIGNvbnN0cmFpbnRzLCBFeGlzdGluZyBwb3J0Zm9saW9zfCBDW0NvbnZleCBPcHRpbWl6ZXJdXG4gIEMgLS0-fFByb3Bvc2VkIHBvcnRmb2xpb3N8IERbQW5hbHlzaXMgRW5naW5lc11cbiAgRCAtLT58QW5hbHlzaXN8IEVbRW5kXVxuXG5cdCIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In19)
