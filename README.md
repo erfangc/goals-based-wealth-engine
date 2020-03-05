@@ -3,6 +3,10 @@
 Wealth Engine is a server that handles an advisor's workflow from connecting to accounts and automatically recommending
 portfolios to meet clients' investment goals and automatically reminding people to re-balance
 
+# High level proposal workflow
+
+[![](https://mermaid.ink/img/eyJjb2RlIjoiZ3JhcGggVERcbiAgQVtTdGFydF0gLS0-IEJbR29hbHMgRW5naW5lXVxuICBCIC0tPnzOvCwgz4MsIE90aGVyIGNvbnN0cmFpbnRzLCBFeGlzdGluZyBwb3J0Zm9saW9zfCBDW0NvbnZleCBPcHRpbWl6ZXJdXG4gIEMgLS0-fFByb3Bvc2VkIHBvcnRmb2xpb3N8IERbQW5hbHlzaXMgRW5naW5lc11cbiAgRCAtLT58QW5hbHlzaXN8IEVbRW5kXVxuXG5cdCIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In19)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoiZ3JhcGggVERcbiAgQVtTdGFydF0gLS0-IEJbR29hbHMgRW5naW5lXVxuICBCIC0tPnzOvCwgz4MsIE90aGVyIGNvbnN0cmFpbnRzLCBFeGlzdGluZyBwb3J0Zm9saW9zfCBDW0NvbnZleCBPcHRpbWl6ZXJdXG4gIEMgLS0-fFByb3Bvc2VkIHBvcnRmb2xpb3N8IERbQW5hbHlzaXMgRW5naW5lc11cbiAgRCAtLT58QW5hbHlzaXN8IEVbRW5kXVxuXG5cdCIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In19)
+
 # Goals engine
 
 We implement goals based investing as a potential step in the full proposal generation / re-balancing etc.
@@ -41,7 +45,7 @@ is the lump sum at date T = retirement date
 
 This lump sum is the _goal_, investment horizon is T
 
-**How do we model pensions / social security payments?
+**How do we model pensions / social security payments?**
 
 Predict or input separately, then subtract these payments from required retirement income. They amount to a net reduction
 to the retirement income requirement and will also lower the required lump sum
