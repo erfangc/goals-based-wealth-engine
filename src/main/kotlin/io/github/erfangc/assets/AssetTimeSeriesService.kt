@@ -3,7 +3,8 @@ package io.github.erfangc.assets
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 import kotlin.streams.toList
 
 @Service
@@ -20,7 +21,7 @@ class AssetTimeSeriesService {
                                  stop: LocalDate): List<TimeSeriesDatum> {
         val returnTimeSeries = assetIds.map { assetId ->
 
-            val reader = ClassPathResource("assets/time-series/$assetId.json")
+            val reader = ClassPathResource("assets/time-series/$assetId.csv")
                     .inputStream
                     .bufferedReader()
 
@@ -79,8 +80,12 @@ class AssetTimeSeriesService {
                 // first group by assetId, within each asset's daily return history group by again by year/month
                 .groupBy { it.assetId }
                 .flatMap { (assetId, v) ->
+                    val formatter = DateTimeFormatterBuilder()
+                            .appendPattern("yyyy-MM")
+                            .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
+                            .toFormatter()
                     v.groupBy {
-                        it.date.format(DateTimeFormatter.ofPattern("yyyy-MM"))
+                        it.date.format(formatter)
                     }.map {
                         (date, dailyReturns) ->
                         val value = dailyReturns.fold(1.0) {
@@ -91,7 +96,7 @@ class AssetTimeSeriesService {
                                 assetId = assetId,
                                 value = value,
                                 field = Field.RETURN,
-                                date = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM"))
+                                date = LocalDate.parse(date, formatter)
                         )
                     }
                 }
