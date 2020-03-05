@@ -14,11 +14,11 @@ import kotlin.math.pow
  * computed on each node on this grid such as the transition probability between nodes as well
  * as the probability of reaching the goal
  */
-class StateSpaceGrid(private val portfolioChoices: PortfolioChoices,
-                     val knownCashflows: List<KnownCashflow>,
-                     private val investmentHorizon: Int,
-                     private val initialWealth: Double,
-                     private val goal: Double) {
+class GoalsEngineService(private val portfolioChoices: PortfolioChoices,
+                         val knownCashflows: List<KnownCashflow>,
+                         private val investmentHorizon: Int,
+                         private val initialWealth: Double,
+                         private val goal: Double) {
 
     private val muMin = portfolioChoices.muMin()
     private val muMax = portfolioChoices.muMax()

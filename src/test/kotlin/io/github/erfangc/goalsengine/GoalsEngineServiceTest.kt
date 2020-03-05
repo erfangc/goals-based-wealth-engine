@@ -2,7 +2,7 @@ package io.github.erfangc.goalsengine
 
 import org.junit.jupiter.api.Test
 
-internal class StateSpaceGridTest {
+internal class GoalsEngineServiceTest {
 
     @Test
     internal fun name() {
@@ -18,8 +18,8 @@ internal class StateSpaceGridTest {
                         0.0886
                 )
         )
-        val grid = StateSpaceGrid(
-                efficientFrontier = efficientFrontier,
+        val grid = GoalsEngineService(
+                portfolioChoices = efficientFrontier,
                 goal = 200.0,
                 initialWealth = 100.0,
                 knownCashflows = emptyList(),
