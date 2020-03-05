@@ -32,7 +32,7 @@ The methodology implements this 2019 [paper](https://srdas.github.io/Papers/DP_P
 
 Support for multiple goals must be available
 
-**How do we model de-accmulation?
+**How do we model de-accmulation?**
 
 Two step process:
 
