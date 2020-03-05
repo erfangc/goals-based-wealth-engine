@@ -30,6 +30,22 @@ The methodology implements this 2019 [paper](https://srdas.github.io/Papers/DP_P
  the target portfolio is build dynamically based on the point on this efficient frontier that corresponds to a portfolio
  that maximizes the probability of achieving the client's goal
 
+Support for multiple goals must be available
+
+**How do we model de-accmulation?
+
+Two step process:
+
+Retirement income stream is discounted and aggregated as a single PV (from the point of view of the year of retirement). This
+is the lump sum at date T = retirement date
+
+This lump sum is the _goal_, investment horizon is T
+
+**How do we model pensions / social security payments?
+
+Predict or input separately, then subtract these payments from required retirement income. They amount to a net reduction
+to the retirement income requirement and will also lower the required lump sum
+
 # Convex optimization
 
 While the goals based wealth engine produces a target return and risk level, it is up to the convex optimization algorithm
@@ -43,6 +59,14 @@ Thus forming a two step process for constructing new portfolios:
  
  - The convex optimization step can also incorporate other constraints the client might have such as tax loss constraints
  or concentration constraints
+
+**Support multiple portfolios**
+
+The convex optimization process must support the ability to re-balance multiple portfolios that may or may not be able 
+to transfer between each other. In addition, ideally we should consider different white list per account though this is aspirational
+
+Why: 401K, IRA and Roth IRA assets cannot be withdrawn and transferred. However, they form an integral part of the overall
+goals based investment process
  
 # Other analysis
 
@@ -54,7 +78,5 @@ To support the main workflow of creating proposals, we also have services that p
 intermediate computations. These are enumerated below
 
  - `covariance` package to provide covariance matrices
- 
  - `expectedreturns` package to provide asset expected returns
- 
  - `assets` package to provide asset indicative data such as price as well as time series information
