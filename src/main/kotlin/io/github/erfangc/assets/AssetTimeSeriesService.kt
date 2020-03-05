@@ -12,7 +12,7 @@ class AssetTimeSeriesService {
      * Computes the return of a given list of assets
      * and return them in a single (co-mingled) list of time series datum objects
      *
-     * The caller can use groupBy operations to separate time series by asset post call
+     * The caller can use `groupBy` operations to separate time series by asset post call
      */
     fun getReturnTimeSeries(assetIds: List<String>,
                             start: LocalDate,
