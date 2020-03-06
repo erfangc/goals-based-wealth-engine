@@ -1,6 +1,7 @@
 package io.github.erfangc.expectedreturns
 
 import io.github.erfangc.assets.AssetTimeSeriesService
+import io.github.erfangc.util.DateUtils.months
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
@@ -120,14 +121,4 @@ class ExpectedReturnsService(private val assetTimeSeriesService: AssetTimeSeries
         }.toMap()
     }
 
-    // determine the set of months between start -> stop by adding a month until stop
-    private fun months(start: LocalDate, stop: LocalDate): List<LocalDate> {
-        var currentMonth = start
-        val months = mutableListOf<LocalDate>()
-        while (currentMonth.isBefore(stop)) {
-            months.add(currentMonth)
-            currentMonth = currentMonth.plusMonths(1)
-        }
-        return months
-    }
 }
