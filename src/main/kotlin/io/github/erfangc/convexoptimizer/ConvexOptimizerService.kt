@@ -1,6 +1,8 @@
 package io.github.erfangc.convexoptimizer
 
+import ilog.concert.IloObjectiveSense
 import ilog.cplex.IloCplex
+import io.github.erfangc.assets.AssetService
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.users.UserService
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service
 class ConvexOptimizerService(
         private val expectedReturnsService: ExpectedReturnsService,
         private val covarianceService: CovarianceService,
+        private val assetService: AssetService,
         private val userService: UserService
 ) {
 
@@ -27,14 +30,19 @@ class ConvexOptimizerService(
      */
     fun optimizePortfolio(req: OptimizePortfolioRequest): OptimizePortfolioResponse {
         val assetIds = assetIds(req)
+        val assets = assetService.getAssets(assetIds).associateBy { it.assetId }
+
+        val cplex = IloCplex()
 
         //
         // build the risk terms on which we minimize
         //
         val response = covarianceService.computeCovariances(assetIds)
 
+        cplex.objective(IloObjectiveSense.Maximize, cplex.numVar(1.0,1.0))
+
         //
-        // position level restrictions (tax)
+        // position level restrictions (tax etc.)
         //
         TODO()
     }

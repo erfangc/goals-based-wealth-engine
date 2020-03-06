@@ -28,11 +28,6 @@
 			<systemPath>${basedir}/bin/cplex.jar</systemPath>
 		</dependency>
 		<dependency>
-			<groupId>com.joptimizer</groupId>
-			<artifactId>joptimizer</artifactId>
-			<version>5.0.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.6.1</version>

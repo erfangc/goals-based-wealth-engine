@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 @Service
 class AssetService {
 
-    val assetLookup = jacksonObjectMapper()
+    private val assetLookup = jacksonObjectMapper()
             .readValue<Map<String, Asset>>(ClassPathResource("assets/assets.json").inputStream)
 
     fun getAssets(assetIds: List<String>): List<Asset> {
