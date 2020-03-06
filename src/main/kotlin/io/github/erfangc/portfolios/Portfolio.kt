@@ -6,4 +6,3 @@ data class Portfolio(
         val description: String? = null,
         val positions: List<Position> = emptyList()
 )
-

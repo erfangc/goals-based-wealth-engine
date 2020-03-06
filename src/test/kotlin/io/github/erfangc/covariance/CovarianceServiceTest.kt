@@ -11,8 +11,8 @@ internal class CovarianceServiceTest {
     fun computeCovariances() {
         val svc = CovarianceService(AssetTimeSeriesService())
         val response = svc.computeCovariances(
-                assetIds = listOf("BND", "VTI", "VEA", "BNDX")
+                assetIds = listOf("VTI", "VTI", "BND")
         )
-        println(response)
+        response
     }
 }
