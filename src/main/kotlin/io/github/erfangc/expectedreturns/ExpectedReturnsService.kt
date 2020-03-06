@@ -101,16 +101,22 @@ class ExpectedReturnsService(private val assetTimeSeriesService: AssetTimeSeries
         }.toTypedArray()
 
         // find the averages
-        val averages = x.map { it.average() }
+        val averages = doubleArrayOf(
+                x.map { it[0] }.average(),
+                x.map { it[1] }.average(),
+                x.map { it[2] }.average()
+        )
 
         // create the y(s)
         return assetIds.map { assetId ->
             val monthlyReturns = monthlySeries[assetId] ?: throw IllegalStateException()
-            val y = months.map { monthlyReturns[it]?.value?.div(100.0) ?: 0.0 }.toDoubleArray()
+            val y = months.map { monthlyReturns[it]?.value ?: 0.0 }.toDoubleArray()
             val ols = OLSMultipleLinearRegression()
             ols.newSampleData(y, x)
             val betas = ols.estimateRegressionParameters()
-            assetId to betas.mapIndexed { idx, beta -> beta * averages[idx] }.sum()
+            val mu = averages.mapIndexed { idx, average -> betas[idx + 1] * average }.sum()
+            // expected returns must be annualized
+            assetId to mu * 12
         }.toMap()
     }
 

@@ -10,7 +10,7 @@ internal class ExpectedReturnsServiceTest {
     @Test
     fun getExpectedReturns() {
         val svc = ExpectedReturnsService(AssetTimeSeriesService())
-        val expectedReturns = svc.getExpectedReturns(listOf("BND", "VEA"))
+        val expectedReturns = svc.getExpectedReturns(listOf("BND", "VTI", "VWO", "VEA"))
         println(expectedReturns)
     }
 }
