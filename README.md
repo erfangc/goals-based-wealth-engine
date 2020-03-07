@@ -94,3 +94,10 @@ Example query:
 ```
 wget https://query1.finance.yahoo.com/v7/finance/download/VXF?period1=1176163200&period2=1583366400&interval=1d&events=history&crumb=m6l2bRMEQLD
 ```
+
+## Cross sectional data
+
+We can useYahoo Finance for parsing cross sectional data (metadata data about funds / stocks etc). 
+
+See my repo [Here](https://github.com/erfangc/equity-valuation)
+Medium post [Here](https://medium.com/@erfangc/where-does-the-stock-market-think-society-is-headed-part-i-9e319a34d7db)

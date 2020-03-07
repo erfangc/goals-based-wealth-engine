@@ -214,11 +214,14 @@ class ConvexOptimizerService(
 
     private fun assetIds(req: OptimizePortfolioRequest): List<String> {
         val holdings = holdingAssetIds(req)
-        val whiteList = whiteList()
+        val whiteList = defaultWhiteList()
         return (holdings + whiteList).distinct()
     }
 
-    private fun whiteList(): List<String> {
+    /**
+     * Figure out the default white list for the current user
+     */
+    private fun defaultWhiteList(): List<String> {
         val user = userService.getUser()
         return user.overrides?.whiteList?.map { it.assetId } ?: emptyList()
     }
