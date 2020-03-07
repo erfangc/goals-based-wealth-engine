@@ -87,10 +87,10 @@ class ConvexOptimizerService(
         }
 
         // parse the solution back into a portfolio
-        return OptimizePortfolioResponse(orders = parseOrders(ctx))
+        return OptimizePortfolioResponse(proposedOrders = parseOrders(ctx))
     }
 
-    private fun parseOrders(ctx: OptimizationContext): List<Order> {
+    private fun parseOrders(ctx: OptimizationContext): List<ProposedOrder> {
         return ctx
                 .positionVars
                 .groupBy { it.portfolioId }
@@ -102,7 +102,7 @@ class ConvexOptimizerService(
                         val targetMv = ctx.aggregateNav * aggWt
                         val position = positionVar.position
                         val assetId = position.assetId
-                        Order(
+                        ProposedOrder(
                                 portfolioId = portfolioId,
                                 assetId = assetId,
                                 positionId = position.id,
