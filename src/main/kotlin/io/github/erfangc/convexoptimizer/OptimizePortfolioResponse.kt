@@ -1,5 +1,3 @@
 package io.github.erfangc.convexoptimizer
 
-import io.github.erfangc.portfolios.Portfolio
-
-data class OptimizePortfolioResponse(val portfolios: List<Portfolio>)
+data class OptimizePortfolioResponse(val orders: List<Order>)

@@ -16,6 +16,7 @@ import io.github.erfangc.util.MarketValueAnalysis
 import io.github.erfangc.util.WeightComputer
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import kotlin.math.floor
 
 @Service
 class ConvexOptimizerService(
@@ -28,7 +29,7 @@ class ConvexOptimizerService(
 
     private val logger = LoggerFactory.getLogger(ConvexOptimizerService::class.java)
 
-    internal class OptimizationContext(
+    internal data class OptimizationContext(
             val cplex: IloCplex,
             val request: OptimizePortfolioRequest,
             val assets: Map<String, Asset>,
@@ -36,8 +37,20 @@ class ConvexOptimizerService(
             val assetVars: Map<String, IloNumVar>,
             val portfolioDefinitions: List<PortfolioDefinition>,
             val positionVars: List<PositionVar>,
-            val expectedReturns: Map<String, Double>
+            val expectedReturns: Map<String, Double>,
+            val analyses: Map<String, MarketValueAnalysis>,
+            val aggregateNav: Double
     )
+
+    /**
+     * This data class denotes a decision variable for how much to transact
+     * in a given position
+     *
+     * These decision variables of course must sum up to the appropriate allocation to the assets
+     *
+     * @param numVar this is the weight to trade in the given position
+     */
+    internal data class PositionVar(val id: String, val portfolioId: String, val position: Position, val numVar: IloNumVar)
 
     /**
      * For convex optimization there are two classes of objectives:
@@ -65,8 +78,8 @@ class ConvexOptimizerService(
         cplex.add(cplex.eq(returnExpr(ctx), req.objectives.expectedReturn))
 
         // position level restrictions
-        positionConstraints(ctx).forEach {
-            constraint -> cplex.add(constraint)
+        positionConstraints(ctx).forEach { constraint ->
+            cplex.add(constraint)
         }
 
         if (!cplex.solve()) {
@@ -74,29 +87,39 @@ class ConvexOptimizerService(
         }
 
         // parse the solution back into a portfolio
-
-        TODO()
+        return OptimizePortfolioResponse(orders = parseOrders(ctx))
     }
 
-    /**
-     * This data class denotes a decision variable for how much to transact
-     * in a given position
-     *
-     * These decision variables of course must sum up to the appropriate allocation to the assets
-     */
-    internal data class PositionVar(val id: String, val portfolioId: String, val position: Position, val numVar: IloNumVar)
+    private fun parseOrders(ctx: OptimizationContext): List<Order> {
+        return ctx
+                .positionVars
+                .groupBy { it.portfolioId }
+                .flatMap { (portfolioId, positionVars) ->
+                    positionVars.map {
+                        // the numVar are tradeWeight to the aggregate
+                        positionVar ->
+                        val aggWt = ctx.cplex.getValue(positionVar.numVar)
+                        val targetMv = ctx.aggregateNav * aggWt
+                        val position = positionVar.position
+                        val assetId = position.assetId
+                        Order(
+                                portfolioId = portfolioId,
+                                assetId = assetId,
+                                positionId = position.id,
+                                quantity = quantity(targetMv, ctx.assets[assetId])
+                        )
+                    }
+                }
+    }
+
+    private fun quantity(targetMv: Double, asset: Asset?): Double {
+        return floor(targetMv / (asset?.price ?: 0.0))
+    }
 
     private fun positionConstraints(ctx: OptimizationContext): List<IloConstraint> {
-        val req = ctx.request
-        val analyses = analyses(ctx.portfolioDefinitions)
-
-        // aggregate the NAV of all portfolios so we can find out how much a position
-        // is weighted in the broader aggregated portfolio
-        val aggregateNav = analyses
-                .values
-                .fold(0.0) { acc, analysis -> acc.plus(analysis.netAssetValue) }
-
         val cplex = ctx.cplex
+        val analyses = ctx.analyses
+        val aggregateNav = ctx.aggregateNav
 
         // position variables must 1) when summed, be consistent within their portfolio 2) when summed across assets
         // be consistent with the allocation to that asset
@@ -116,7 +139,10 @@ class ConvexOptimizerService(
                         val mvAnalysis = analyses[portfolioId] ?: error("")
                         val portWt = mvAnalysis.netAssetValue / aggregateNav
                         val posWt = mvAnalysis.weights[positionId] ?: 0.0
-                        cplex.prod(positionVar.numVar, portWt * posWt)
+                        val originalWtToAgg = portWt * posWt
+                        // we use sum here b/c the numVar represent a % weight of the
+                        // aggregateNAV to transact
+                        cplex.sum(positionVar.numVar, originalWtToAgg)
                     }.toTypedArray()
                     cplex.eq(cplex.sum(terms), assetVar)
                 }
@@ -174,7 +200,9 @@ class ConvexOptimizerService(
                         portfolio = Portfolio(
                                 id = "new-portfolio",
                                 // TODO new portfolio should start with a pre-defined amount given by the request
-                                positions = listOf(Position(id = "CASH", assetId = "USD", quantity = 1_000_000.0))
+                                positions = listOf(
+                                        Position(id = "CASH", assetId = "USD", quantity = 1_000_000.0)
+                                )
                         )
                 )
         )
@@ -186,7 +214,32 @@ class ConvexOptimizerService(
         val expectedReturns = expectedReturnsService.getExpectedReturns(assetIds)
 
         // create the actual position variables
-        val positionVars = portfolios.flatMap { portfolioDefinition ->
+        val positionVars = positionVars(portfolios, cplex)
+
+        val analyses = analyses(portfolios)
+
+        // aggregate the NAV of all portfolios so we can find out how much a position
+        // is weighted in the broader aggregated portfolio
+        val aggregateNav = analyses
+                .values
+                .fold(0.0) { acc, analysis -> acc.plus(analysis.netAssetValue) }
+
+        return OptimizationContext(
+                cplex,
+                req,
+                assets,
+                assetIds,
+                assetVars,
+                portfolios,
+                positionVars,
+                expectedReturns,
+                analyses,
+                aggregateNav
+        )
+    }
+
+    private fun positionVars(portfolios: List<PortfolioDefinition>, cplex: IloCplex): List<PositionVar> {
+        return portfolios.flatMap { portfolioDefinition ->
             val portfolio = portfolioDefinition.portfolio
             portfolio.positions.map { position ->
                 val portfolioId = portfolio.id
@@ -199,17 +252,6 @@ class ConvexOptimizerService(
                 )
             }
         }
-
-        return OptimizationContext(
-                cplex,
-                req,
-                assets,
-                assetIds,
-                assetVars,
-                portfolios,
-                positionVars,
-                expectedReturns
-        )
     }
 
     private fun assetIds(req: OptimizePortfolioRequest): List<String> {
