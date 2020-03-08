@@ -5,6 +5,7 @@ import io.github.erfangc.util.DateUtils.months
 import org.apache.commons.math3.stat.correlation.Covariance
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import kotlin.math.sqrt
 
 @Service
 class CovarianceService(private val assetTimeSeriesService: AssetTimeSeriesService) {
@@ -31,7 +32,7 @@ class CovarianceService(private val assetTimeSeriesService: AssetTimeSeriesServi
         val months = months(start, stop)
         val data = months.map { date ->
             assetIds.map { assetId ->
-                monthlyReturns[assetId]?.get(date)?.value ?: 0.0
+                monthlyReturns[assetId]?.get(date)?.value?.times(sqrt(12.0)) ?: 0.0
             }.toDoubleArray()
         }.toTypedArray()
         val covariances = Covariance(data).covarianceMatrix.data
