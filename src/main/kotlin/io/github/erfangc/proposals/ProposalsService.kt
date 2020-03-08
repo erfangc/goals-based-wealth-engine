@@ -10,7 +10,9 @@ import io.github.erfangc.goalsengine.GoalsOptimizationRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.util.StopWatch
 import java.time.LocalDate
 import java.util.*
 import kotlin.math.pow
@@ -25,6 +27,8 @@ class ProposalsService(
         private val convexOptimizerService: ConvexOptimizerService
 ) {
 
+    private val log = LoggerFactory.getLogger(ProposalsService::class.java)
+
     /**
      * Initiate the workflow of creating a proposal
      *
@@ -33,6 +37,9 @@ class ProposalsService(
      */
     fun generateProposal(req: GenerateProposalRequest): GenerateProposalResponse {
         // step 1 - run goals based simulation to find risk reward that maximizes chance of success
+        log.info("Running goals engine to figure out the best risk reward for ${req.client.id}")
+        val stopWatch = StopWatch()
+        stopWatch.start()
         val goalsOptimizationResponse = goalsEngineService.goalsOptimization(
                 GoalsOptimizationRequest(
                         initialWealth = initialInvestment(req),
@@ -41,14 +48,21 @@ class ProposalsService(
                         goal = goal(req)
                 )
         )
+        stopWatch.stop()
+        log.info("Finished goals engine to figure out the best risk reward for ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
 
+        val expectedReturn = goalsOptimizationResponse.expectedReturn
         // step 2 - given the target risk reward, use convex optimization to find the actual trades
+        log.info("Running convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}")
+        stopWatch.start()
         val optimizePortfolioResponse = convexOptimizerService.optimizePortfolio(
                 OptimizePortfolioRequest(
-                        objectives = Objectives(expectedReturn = goalsOptimizationResponse.expectedReturn),
+                        objectives = Objectives(expectedReturn = expectedReturn),
                         portfolios = portfolioDefinitions(req)
                 )
         )
+        stopWatch.stop()
+        log.info("Finished convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
 
         return GenerateProposalResponse(
                 proposal = Proposal(
@@ -91,7 +105,8 @@ class ProposalsService(
      */
     private fun cashflows(req: GenerateProposalRequest): List<Cashflow> {
         val year = LocalDate.now().year
-        return req.client.goals?.knownCashflow?.map { Cashflow(t = it.year - year, amount = it.amount) } ?: error(supportMsg)
+        return req.client.goals?.knownCashflow?.map { Cashflow(t = it.year - year, amount = it.amount) }
+                ?: error(supportMsg)
     }
 
     /**

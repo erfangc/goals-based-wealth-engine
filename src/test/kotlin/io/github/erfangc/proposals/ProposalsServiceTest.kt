@@ -58,7 +58,7 @@ internal class ProposalsServiceTest {
                                 lastName = "Erfang",
                                 firstName = "Chen",
                                 goals = Goals(
-                                        retirementYear = 2030,
+                                        retirementYear = 2045,
                                         retirementYearlyIncome = 2000.0
                                 )
                         ),
