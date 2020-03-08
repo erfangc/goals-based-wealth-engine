@@ -1,3 +1,11 @@
 package io.github.erfangc.clients
 
-data class Client(val id: String)
+import java.time.LocalDate
+
+data class Client(val id: String,
+                  val goals: Goals,
+                  val firstName: String,
+                  val lastName: String,
+                  val email: String? = null,
+                  val ssn: String? = null,
+                  val birthDay: LocalDate? = null)

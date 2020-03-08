@@ -15,7 +15,7 @@ import kotlin.math.pow
  * as the probability of reaching the goal
  */
 class GoalsEngine(private val portfolioChoices: PortfolioChoices,
-                  private val knownCashflows: List<KnownCashflow>,
+                  private val cashflows: List<Cashflow>,
                   private val investmentHorizon: Int,
                   private val initialWealth: Double,
                   private val goal: Double) {
@@ -25,7 +25,7 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
     private val sigmaMax = portfolioChoices.sigma(muMax)
     private val sigmaMin = portfolioChoices.sigma(muMin)
 
-    private val knownCashflowsLookup = knownCashflows.associateBy { it.t }
+    private val knownCashflowsLookup = cashflows.associateBy { it.t }
 
     private val c = {t: Int -> knownCashflowsLookup[t]?.amount ?: 0.0}
 

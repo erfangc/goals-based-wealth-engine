@@ -11,6 +11,7 @@ class ProposalsService(
 ) {
 
     fun generateProposal(req: GenerateProposalRequest): GenerateProposalResponse {
+        req.client
         TODO()
     }
 
