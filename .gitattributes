@@ -4,3 +4,4 @@ bin/libcplex1290.dylib filter=lfs diff=lfs merge=lfs -text
 bin/libcplex1290.so filter=lfs diff=lfs merge=lfs -text
 bin/libcplex1290remote.so filter=lfs diff=lfs merge=lfs -text
 bin/libcplex1290remotejni.so filter=lfs diff=lfs merge=lfs -text
+bin/libcplex1290remotejni.jnilib filter=lfs diff=lfs merge=lfs -text

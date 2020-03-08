@@ -1,5 +1,6 @@
 package io.github.erfangc.expectedreturns
 
+import io.github.erfangc.assets.AssetService
 import io.github.erfangc.assets.AssetTimeSeriesService
 import io.github.erfangc.util.DateUtils.months
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
@@ -10,7 +11,10 @@ import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 
 @Service
-class ExpectedReturnsService(private val assetTimeSeriesService: AssetTimeSeriesService) {
+class ExpectedReturnsService(
+        private val assetTimeSeriesService: AssetTimeSeriesService,
+        private val assetService: AssetService
+) {
 
     internal data class FactorLevel(val name: String, val date: LocalDate, val value: Double)
 
@@ -37,16 +41,19 @@ class ExpectedReturnsService(private val assetTimeSeriesService: AssetTimeSeries
                 val hml = parts[3].trim().toDouble() / 100.0
                 val rf = parts[4].trim().toDouble() / 100.0
                 date to mapOf(
+                        // basically broad equity market performance
                         "market" to FactorLevel(
                                 name = "market",
                                 date = date,
                                 value = market
                         ),
+                        // small minus big
                         "smb" to FactorLevel(
                                 name = "smb",
                                 date = date,
                                 value = smb
                         ),
+                        // high minus low
                         "hml" to FactorLevel(
                                 name = "hml",
                                 date = date,
@@ -62,6 +69,24 @@ class ExpectedReturnsService(private val assetTimeSeriesService: AssetTimeSeries
             .toMap()
 
     /**
+     * Compute factor premium looking back arbitrarily long
+     */
+    private fun factorPremiums(): Map<String, Double> {
+        val stop = now()
+        val months = months(stop.minusYears(30), stop)
+        val totals = months
+                .fold(mapOf("market" to 0.0, "smb" to 0.0, "hml" to 0.0)) { acc, date ->
+                    mapOf(
+                            "market" to (acc["market"] ?: error("")) + (factorLevels[date]?.get("market")?.value ?: error("")),
+                            "smb" to (acc["smb"] ?: error("")) + (factorLevels[date]?.get("smb")?.value ?: error("")),
+                            "hml" to (acc["hml"] ?: error("")) + (factorLevels[date]?.get("hml")?.value ?: error(""))
+                    )
+                }
+        // take an average by dividing by the number of observations
+        return totals.mapValues { it.value / months.size }
+    }
+
+    /**
      * Compute the expected returns of assets given their id
      *
      * @return a Map whose keys are assetIds and the values are expected returns for the asset
@@ -73,15 +98,13 @@ class ExpectedReturnsService(private val assetTimeSeriesService: AssetTimeSeries
         // returns were zero
 
         // set to final date to the most recent month end
-        val now = LocalDate.now()
-        val lastMonth = now.minusMonths(1)
+        val lastMonth = now()
         // this should be the last day of last month
-        val stop = lastMonth.minusDays(lastMonth.dayOfMonth.toLong() - 1)
-        val start = stop.minusYears(5)
+        val start = lastMonth.minusYears(5)
 
         // associate the return time series by assetId then by date
         val monthlySeries = assetTimeSeriesService
-                .getMonthlyReturnTimeSeries(assetIds, start, stop)
+                .getMonthlyReturnTimeSeries(assetIds, start, lastMonth)
                 .groupBy {
                     it.assetId
                 }
@@ -89,36 +112,49 @@ class ExpectedReturnsService(private val assetTimeSeriesService: AssetTimeSeries
                     entry.value.associateBy { datum -> datum.date }
                 }
 
-        val months = months(start, stop)
+        val months = months(start, lastMonth)
 
         // create the x for the multi-variable regression
         val x = months.map { month ->
             val factorLevel = factorLevels[month] ?: throw IllegalStateException()
             doubleArrayOf(
-                    factorLevel["market"]?.value ?: 0.0,
-                    factorLevel["smb"]?.value ?: 0.0,
-                    factorLevel["hml"]?.value ?: 0.0
+                    factorLevel["market"]?.value ?: error(""),
+                    factorLevel["smb"]?.value ?: error(""),
+                    factorLevel["hml"]?.value ?: error("")
             )
         }.toTypedArray()
 
         // find the averages
+        val factorPremiums = factorPremiums()
         val averages = doubleArrayOf(
-                x.map { it[0] }.average(),
-                x.map { it[1] }.average(),
-                x.map { it[2] }.average()
+                factorPremiums["market"] ?: error(""),
+                factorPremiums["smb"] ?: error(""),
+                factorPremiums["hml"] ?: error("")
         )
 
+        val assets = assetService.getAssets(assetIds).associateBy { it.assetId }
         // create the y(s)
         return assetIds.map { assetId ->
-            val monthlyReturns = monthlySeries[assetId] ?: throw IllegalStateException()
-            val y = months.map { monthlyReturns[it]?.value ?: 0.0 }.toDoubleArray()
-            val ols = OLSMultipleLinearRegression()
-            ols.newSampleData(y, x)
-            val betas = ols.estimateRegressionParameters()
-            val mu = averages.mapIndexed { idx, average -> betas[idx + 1] * average }.sum()
-            // expected returns must be annualized
-            assetId to mu * 12
+            val asset = assets[assetId]
+            if (asset?.assetClass == "Bond") {
+                assetId to (asset.yield?.div(100.0) ?: 0.0)
+            } else {
+                val monthlyReturns = monthlySeries[assetId] ?: throw IllegalStateException()
+                val y = months.map { monthlyReturns[it]?.value ?: 0.0 }.toDoubleArray()
+                val ols = OLSMultipleLinearRegression()
+                ols.newSampleData(y, x)
+                val betas = ols.estimateRegressionParameters()
+                val mu = averages.mapIndexed { idx, average -> betas[idx + 1] * average }.sum()
+                // expected returns must be annualized
+                assetId to mu * 12
+            }
         }.toMap()
+    }
+
+    private fun now(): LocalDate {
+        val now = LocalDate.now()
+        val lastMonth = now.minusMonths(1)
+        return lastMonth.minusDays(lastMonth.dayOfMonth.toLong() - 1)
     }
 
 }

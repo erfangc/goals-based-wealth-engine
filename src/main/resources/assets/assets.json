@@ -4,10 +4,22 @@
     "name": "Vanguard Total International Bond ETF",
     "description": "",
     "ticker": "BNDX",
+    "yield": 3.31,
     "cusip": "92203J407",
     "type": "ETF",
-    "assetClass": "Taxable Bond",
+    "assetClass": "Bond",
     "price": 58.18
+  },
+  "BND": {
+    "assetId": "BND",
+    "name": "Vanguard Total Bond Market ETF (BND)",
+    "yield": 2.61,
+    "description": "",
+    "ticker": "BND",
+    "cusip": "921937835",
+    "type": "ETF",
+    "assetClass": "Bond",
+    "price": 87.03
   },
   "VXF": {
     "assetId": "VXF",
@@ -16,7 +28,7 @@
     "ticker": "VXF",
     "cusip": "922908652",
     "type": "ETF",
-    "assetClass": "Domestic Stock - More Aggressive",
+    "assetClass": "Stock",
     "price": 119.78
   },
   "VWO": {
@@ -26,7 +38,7 @@
     "ticker": "VWO",
     "cusip": "922042858",
     "type": "ETF",
-    "assetClass": "International/Global Stock",
+    "assetClass": "Stock",
     "price": 41.66
   },
   "VTI": {
@@ -36,7 +48,7 @@
     "ticker": "VTI",
     "cusip": "922908769",
     "type": "ETF",
-    "assetClass": "Domestic Stock - General",
+    "assetClass": "Stock",
     "price": 158.68
   },
   "VEA": {
@@ -46,17 +58,7 @@
     "ticker": "VEA",
     "cusip": "922908769",
     "type": "ETF",
-    "assetClass": "Domestic Stock - General",
+    "assetClass": "Stock",
     "price": 158.68
-  },
-  "BND": {
-    "assetId": "BND",
-    "name": "Vanguard Total Bond Market ETF (BND)",
-    "description": "",
-    "ticker": "BND",
-    "cusip": "921937835",
-    "type": "ETF",
-    "assetClass": "Intermediate-Term Bond",
-    "price": 87.03
   }
 }

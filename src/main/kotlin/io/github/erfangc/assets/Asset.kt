@@ -3,6 +3,7 @@ package io.github.erfangc.assets
 data class Asset(
         val assetId: String,
         val assetClass: String? = null,
+        val yield: Double? = null,
         val type: String? = null,
         val name: String? = null,
         val description: String? = null,
