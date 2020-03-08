@@ -1,20 +1,19 @@
-package io.github.erfangc.util
+package io.github.erfangc.marketvalueanalysis
 
 import io.github.erfangc.assets.Asset
 import io.github.erfangc.assets.AssetService
-import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
 import org.springframework.stereotype.Service
 
 @Service
-class WeightComputer(private val assetService: AssetService) {
+class MarketValueAnalysisService(private val assetService: AssetService) {
 
-    fun getMarketValue(asset: Asset?, position: Position): Double {
+    private fun getMarketValue(asset: Asset?, position: Position): Double {
         return (asset?.price ?: 0.0) * position.quantity
     }
 
-    fun marketValueAnalysis(portfolio: Portfolio): MarketValueAnalysis {
-
+    fun analyze(req: MarketValueAnalysisRequest): MarketValueAnalysis {
+        val portfolio = req.portfolio
         val assets = assetService
                 .getAssets(portfolio.positions.map { it.assetId })
                 .associateBy { it.assetId }
@@ -35,11 +34,8 @@ class WeightComputer(private val assetService: AssetService) {
         }.toMap()
 
         return MarketValueAnalysis(
-                netAssetValue = netAssetValue,
-                marketValue = marketValue,
-                weights = weights
+                netAssetValue, marketValue, weights
         )
-
     }
 
 }

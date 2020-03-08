@@ -23,7 +23,7 @@ internal class GoalsEngineTest {
                 portfolioChoices = efficientFrontier,
                 goal = 200.0,
                 initialWealth = 100.0,
-                knownCashflows = emptyList(),
+                cashflows = emptyList(),
                 investmentHorizon = 10
         )
         val optimalRiskReward = grid.findOptimalRiskReward()

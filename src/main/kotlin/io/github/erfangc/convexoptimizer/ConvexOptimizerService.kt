@@ -8,12 +8,13 @@ import io.github.erfangc.assets.Asset
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
 import io.github.erfangc.users.UserService
 import io.github.erfangc.users.WhiteListItem
-import io.github.erfangc.util.MarketValueAnalysis
-import io.github.erfangc.util.WeightComputer
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.*
@@ -21,7 +22,7 @@ import kotlin.math.floor
 
 @Service
 class ConvexOptimizerService(
-        private val weightComputer: WeightComputer,
+        private val marketValueAnalysisService: MarketValueAnalysisService,
         private val expectedReturnsService: ExpectedReturnsService,
         private val covarianceService: CovarianceService,
         private val assetService: AssetService,
@@ -133,7 +134,7 @@ class ConvexOptimizerService(
         return portfolioDefinitions.map { portfolioDefinition ->
             // figure out how to create position trading
             // variables that must tie back to the asset variables
-            val analysis = weightComputer.marketValueAnalysis(portfolioDefinition.portfolio)
+            val analysis = marketValueAnalysisService.analyze(MarketValueAnalysisRequest(portfolioDefinition.portfolio))
             portfolioDefinition.portfolio.id to analysis
         }.toMap()
     }

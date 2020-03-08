@@ -3,7 +3,7 @@ package io.github.erfangc.convexoptimizer
 import ilog.concert.IloNumVar
 import ilog.cplex.IloCplex
 import io.github.erfangc.assets.Asset
-import io.github.erfangc.util.MarketValueAnalysis
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 
 internal data class OptimizationContext(
         val cplex: IloCplex,

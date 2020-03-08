@@ -1,4 +1,4 @@
-package io.github.erfangc.util
+package io.github.erfangc.marketvalueanalysis
 
 data class MarketValueAnalysis(
         val netAssetValue: Double,

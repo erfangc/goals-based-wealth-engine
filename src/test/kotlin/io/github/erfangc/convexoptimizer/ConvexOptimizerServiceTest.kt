@@ -4,24 +4,22 @@ import io.github.erfangc.assets.AssetService
 import io.github.erfangc.assets.AssetTimeSeriesService
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.users.UserService
-import io.github.erfangc.util.WeightComputer
 import org.junit.jupiter.api.Test
-
-import org.junit.jupiter.api.Assertions.*
 
 internal class ConvexOptimizerServiceTest {
 
     @Test
     fun optimizePortfolio() {
         val assetService = AssetService()
-        val weightComputer = WeightComputer(assetService)
+        val marketValueAnalysisService = MarketValueAnalysisService(assetService)
         val assetTimeSeriesService = AssetTimeSeriesService()
         val covarianceService = CovarianceService(assetTimeSeriesService)
         val userService = UserService()
 
         val svc = ConvexOptimizerService(
-                weightComputer = weightComputer,
+                marketValueAnalysisService = marketValueAnalysisService,
                 assetService = assetService,
                 covarianceService = covarianceService,
                 expectedReturnsService = ExpectedReturnsService(assetTimeSeriesService, assetService),

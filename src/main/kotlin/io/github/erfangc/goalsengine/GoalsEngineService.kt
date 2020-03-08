@@ -28,7 +28,7 @@ class GoalsEngineService(
                 goal = req.goal,
                 initialWealth = req.initialWealth,
                 investmentHorizon = req.investmentHorizon,
-                knownCashflows = req.cashflows
+                cashflows = req.cashflows
         )
         val optimalRiskReward = goalsEngine.findOptimalRiskReward()
         return GoalsOptimizationResponse(
