@@ -131,7 +131,6 @@ class ConvexOptimizerService(
                     // each asset group should have position sum up to it
                     (assetId, vars) ->
                     val assetVar = ctx.assetVars[assetId]
-
                     val terms = vars.map { positionVar ->
                         val portfolioId = positionVar.portfolioId
                         val positionId = positionVar.position.id
@@ -252,7 +251,7 @@ class ConvexOptimizerService(
                         id = "$portfolioId#$positionId",
                         portfolioId = portfolioId,
                         position = position,
-                        numVar = cplex.numVar(0.0, 1.0, "$portfolioId#$positionId")
+                        numVar = cplex.numVar(-1.0, 0.0, "$portfolioId#$positionId")
                 )
             }
             val whiteListVars = defaultWhiteList?.map {
