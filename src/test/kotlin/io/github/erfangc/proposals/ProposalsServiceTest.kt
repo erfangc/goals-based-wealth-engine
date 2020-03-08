@@ -12,8 +12,8 @@ import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
 import io.github.erfangc.users.UserService
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 
-import org.junit.jupiter.api.Assertions.*
 import java.util.*
 
 internal class ProposalsServiceTest {
@@ -58,13 +58,13 @@ internal class ProposalsServiceTest {
                                 lastName = "Erfang",
                                 firstName = "Chen",
                                 goals = Goals(
-                                        retirementYear = 2045,
-                                        retirementYearlyIncome = 2000.0
+                                        retirement = LocalDate.of(2035, 1, 1),
+                                        retirementYearlyIncome = 10000.0 * 12
                                 )
                         ),
-                        newInvestment = 100_000.0
+                        newInvestment = 600_000.0
                 )
         )
-        response.proposal
+        println(response.proposal)
     }
 }

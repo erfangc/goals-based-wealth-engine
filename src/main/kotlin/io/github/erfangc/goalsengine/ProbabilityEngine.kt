@@ -1,6 +1,5 @@
 package io.github.erfangc.goalsengine
 
-import io.github.erfangc.goalsengine.BrownianMotionFactory.forWealth
 import org.apache.commons.math3.distribution.NormalDistribution
 import org.slf4j.LoggerFactory
 import kotlin.math.abs
@@ -9,37 +8,34 @@ import kotlin.math.ln
 import kotlin.math.pow
 
 /**
- * StateSpaceGrid holds information about the state space
+ * Unlike the GoalsEngine this class
+ * accepts a single expected return and volatility
+ * parameter and computes the likelihood of achieving an goal
  *
- * Each state space represents a potential wealth level at a potential time. Information can then be derived /
- * computed on each node on this grid such as the transition probability between nodes as well
- * as the probability of reaching the goal
+ * TODO this contains a lot of duplicate logic to GoalsEngine, consolidate them
  */
-class GoalsEngine(private val portfolioChoices: PortfolioChoices,
-                  private val cashflows: List<Cashflow>,
-                  private val investmentHorizon: Int,
-                  private val initialWealth: Double,
-                  private val goal: Double) {
+class ProbabilityEngine(
+        private val mu: Double,
+        private val sigma: Double,
+        private val cashflows: List<Cashflow>,
+        private val investmentHorizon: Int,
+        private val initialWealth: Double,
+        private val goal: Double
+) {
 
     private val log = LoggerFactory.getLogger(GoalsEngine::class.java)
-    private val muMin = portfolioChoices.muMin()
-    private val muMax = portfolioChoices.muMax()
-    private val sigmaMax = portfolioChoices.sigma(muMax)
-    private val sigmaMin = portfolioChoices.sigma(muMin)
-
     private val knownCashflowsLookup = cashflows.associateBy { it.t }
-
     private val c = { t: Int -> knownCashflowsLookup[t]?.amount ?: 0.0 }
 
     /**
      * Equation 3
      */
     private val wMin = {
-        val w = forWealth(initialWealth, muMin, sigmaMax)
+        val w = BrownianMotionFactory.forWealth(initialWealth, mu, sigma)
         // select min out of all time
         0.rangeTo(investmentHorizon).map { tau ->
             val cfs = (0..tau).sumByDouble { t ->
-                forWealth(c(t), muMin, sigmaMax)((tau - t).toDouble(), -3.0)
+                (BrownianMotionFactory.forWealth(c(t), mu, sigma))((tau - t).toDouble(), -3.0)
             }
             w(tau.toDouble(), -3.0) + cfs
         }.min() ?: throw IllegalStateException()
@@ -49,11 +45,11 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
      * Equation 4
      */
     private val wMax = {
-        val w = forWealth(initialWealth, muMax, sigmaMax)
+        val w = BrownianMotionFactory.forWealth(initialWealth, mu, sigma)
         // select min out of all time
         0.rangeTo(investmentHorizon).map { tau ->
             val cfs = (0..tau).sumByDouble { t ->
-                forWealth(c(tau), muMax, sigmaMax)((tau - t).toDouble(), 3.0)
+                (BrownianMotionFactory.forWealth(c(tau), mu, sigma))((tau - t).toDouble(), 3.0)
             }
             w(tau.toDouble(), 3.0) + cfs
         }.max() ?: throw IllegalStateException()
@@ -67,8 +63,8 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
 
         // rhoGrid is the density parameter that controls how sparse and dense the state grid is
         val rhoGrid = 3.0
-        val increment = sigmaMin / rhoGrid
-        log.info("Creating nodes rhoGrid=${rhoGrid} increment=${sigmaMin / rhoGrid} ln(wMin)=${ln(wMin)} ln(wMax)=${ln(wMax)}")
+        val increment = sigma / rhoGrid
+        log.info("Creating nodes rhoGrid=${rhoGrid} increment=${sigma / rhoGrid} ln(wMin)=${ln(wMin)} ln(wMax)=${ln(wMax)}")
 
         // walk up from ln(wMin) -> ln(wMax) by adding 'increment', where ln = natural log
         // then shift the w by an amount necessary so that initial wealth is one of the w
@@ -122,8 +118,6 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
      * when chosen from the EfficientFrontier
      */
     fun findOptimalRiskReward(): OptimalRiskReward {
-        val musToTry = portfolioChoices.mus()
-
         //
         // define stopping condition:
         // 1) we reached the node such that node.w == W(0)
@@ -137,23 +131,10 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
         // start at t = T - 1 (nodes.size - 1 = T)
         var t = nodes.size - 2
         var currentNode: Node
-        log.info(
-                "Goals optimization detail" +
-                        " muMax=${this.muMax}" +
-                        " muMin=${this.muMin}" +
-                        " sigmaMax=${this.sigmaMax}" +
-                        " sigmaMin=${this.sigmaMin}" +
-                        " goal=${this.goal}" +
-                        " investmentHorizon=${this.investmentHorizon}" +
-                        " nodes.size=${this.nodes.size}" +
-                        " nodes[0].size=${this.nodes[0].size}"
-        )
         do {
             currentNode = nodes[t][i]
             // iterate to find the best mu
-            val (mu, v) = musToTry.map { mu ->
-                mu to v(currentNode, mu)
-            }.maxBy { it.second } ?: throw IllegalStateException()
+            val v = v(currentNode, mu)
             nodes[t][i] = currentNode.copy(mu = mu, v = v)
             currentNode = nodes[t][i]
             if (i < nodes[t].size - 1) {
@@ -167,7 +148,7 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
         return OptimalRiskReward(
                 expectedReturn = currentNode.mu,
                 probabilityOfSuccess = currentNode.v,
-                volatility = portfolioChoices.sigma(currentNode.mu)
+                volatility = sigma
         )
     }
 
@@ -181,11 +162,7 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
      *
      * This is not the transition probability but an input to it
      */
-    private fun pHat(nextNode: Node,
-                     currentNode: Node,
-                     t: Int,
-                     mu: Double): Double {
-        val sigma = portfolioChoices.sigma(mu)
+    private fun pHat(nextNode: Node, currentNode: Node, t: Int): Double {
         val wi = currentNode.w
         val wj = nextNode.w
         val z = (ln(wj / (wi + c(t))) - (mu - sigma.pow(2.0) / 2)) / sigma
@@ -198,8 +175,7 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
      */
     private fun v(currentNode: Node, mu: Double): Double {
         // if the nextNodes is null that means we are at the end of the the investment horizon
-        // in this case, the "v"s are determined already (they are either 0 or 1 depending on
-        // whether the goal have been achieved)
+        // in this case, the "v"s are determined already (they are either 0 or 1 depending on whether the goal have been achieved)
 
         val nextNodes = nextNodes(currentNode) ?: return currentNode.v
 
@@ -207,12 +183,12 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
         // this denominator is used to ensure transition probabilities sum to 1
         val total = nextNodes
                 .sumByDouble { nextNode ->
-                    pHat(nextNode, currentNode, currentNode.t, mu)
+                    pHat(nextNode, currentNode, currentNode.t)
                 }
 
         // sum the next nodes' "v" weighted by probability derived from the prior steps
         return nextNodes.sumByDouble { nextNode ->
-            val probability = pHat(nextNode, currentNode, currentNode.t, mu) / total
+            val probability = pHat(nextNode, currentNode, currentNode.t) / total
             nextNode.v * probability
         }
     }
@@ -225,5 +201,4 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
             nodes[t + 1]
         }
     }
-
 }

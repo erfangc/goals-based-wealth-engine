@@ -7,6 +7,7 @@ import io.github.erfangc.convexoptimizer.PortfolioDefinition
 import io.github.erfangc.goalsengine.Cashflow
 import io.github.erfangc.goalsengine.GoalsEngineService
 import io.github.erfangc.goalsengine.GoalsOptimizationRequest
+import io.github.erfangc.goalsengine.ProbabilityEngine
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
@@ -40,16 +41,23 @@ class ProposalsService(
         log.info("Running goals engine to figure out the best risk reward for ${req.client.id}")
         val stopWatch = StopWatch()
         stopWatch.start()
+        val investmentHorizon = investmentHorizon(req)
+        val cashflows = cashflows(req)
+        val initialWealth = initialInvestment(req)
+        val goal = goal(req)
         val goalsOptimizationResponse = goalsEngineService.goalsOptimization(
                 GoalsOptimizationRequest(
-                        initialWealth = initialInvestment(req),
-                        cashflows = cashflows(req),
-                        investmentHorizon = investmentHorizon(req),
-                        goal = goal(req)
+                        initialWealth = initialWealth,
+                        cashflows = cashflows,
+                        investmentHorizon = investmentHorizon,
+                        goal = goal
                 )
         )
         stopWatch.stop()
-        log.info("Finished goals engine to figure out the best risk reward for ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
+        log.info("Finished goals engine to figure out the best risk reward for ${req.client.id}," +
+                " probabilityOfSuccess=${goalsOptimizationResponse.probabilityOfSuccess}, " +
+                " volatility=${goalsOptimizationResponse.volatility}, " +
+                " run time: ${stopWatch.lastTaskTimeMillis} ms")
 
         val expectedReturn = goalsOptimizationResponse.expectedReturn
         // step 2 - given the target risk reward, use convex optimization to find the actual trades
@@ -64,11 +72,21 @@ class ProposalsService(
         stopWatch.stop()
         log.info("Finished convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
 
+        // TODO we can re-compute the probability of achieving goal
+//        ProbabilityEngine(
+//                mu = ,
+//                sigma = ,
+//                investmentHorizon = investmentHorizon,
+//                cashflows = cashflows,
+//                initialWealth = initialWealth,
+//                goal = goal
+//        )
         return GenerateProposalResponse(
                 proposal = Proposal(
                         id = UUID.randomUUID().toString(),
                         portfolios = portfolioDefinitions(req)?.map { it.portfolio } ?: emptyList(),
-                        proposedOrders = optimizePortfolioResponse.proposedOrders
+                        proposedOrders = optimizePortfolioResponse.proposedOrders,
+                        probabilityOfSuccess = goalsOptimizationResponse.probabilityOfSuccess
                 )
         )
     }
@@ -95,9 +113,9 @@ class ProposalsService(
      * Derive investment horizon based on client goals
      */
     private fun investmentHorizon(req: GenerateProposalRequest): Int {
-        val retirementYear = req.client.goals?.retirementYear ?: error(supportMsg)
+        val retirementYear = req.client.goals?.retirement ?: error(supportMsg)
         val year = LocalDate.now().year
-        return retirementYear - year
+        return retirementYear.year - year
     }
 
     /**
@@ -105,7 +123,7 @@ class ProposalsService(
      */
     private fun cashflows(req: GenerateProposalRequest): List<Cashflow> {
         val year = LocalDate.now().year
-        return req.client.goals?.knownCashflow?.map { Cashflow(t = it.year - year, amount = it.amount) }
+        return req.client.goals?.knownCashflows?.map { Cashflow(t = it.year - year, amount = it.amount) }
                 ?: error(supportMsg)
     }
 
