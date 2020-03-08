@@ -1,8 +1,9 @@
 package io.github.erfangc.goalsengine
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-internal class GoalsEngineServiceTest {
+internal class GoalsEngineTest {
 
     @Test
     internal fun name() {
@@ -18,18 +19,17 @@ internal class GoalsEngineServiceTest {
                         0.0886
                 )
         )
-        val grid = GoalsEngineService(
+        val grid = GoalsEngine(
                 portfolioChoices = efficientFrontier,
                 goal = 200.0,
                 initialWealth = 100.0,
                 knownCashflows = emptyList(),
                 investmentHorizon = 10
         )
-        val node = grid.optimizeAndGetRootNode()
-        println(node.w)
-        println(node.v)
-        println(node.mu)
-        println(node.t)
+        val optimalRiskReward = grid.findOptimalRiskReward()
+        assertEquals(0.6645170251146737, optimalRiskReward.probabilityOfSuccess)
+        assertEquals(0.0814, optimalRiskReward.expectedReturn)
+        assertEquals(0.16038768057568525, optimalRiskReward.volatility)
     }
 
 }

@@ -2,7 +2,6 @@ package io.github.erfangc.convexoptimizer
 
 import ilog.concert.IloConstraint
 import ilog.concert.IloNumExpr
-import ilog.concert.IloNumVar
 import ilog.concert.IloObjectiveSense
 import ilog.cplex.IloCplex
 import io.github.erfangc.assets.Asset
@@ -30,29 +29,6 @@ class ConvexOptimizerService(
 ) {
 
     private val logger = LoggerFactory.getLogger(ConvexOptimizerService::class.java)
-
-    internal data class OptimizationContext(
-            val cplex: IloCplex,
-            val request: OptimizePortfolioRequest,
-            val assets: Map<String, Asset>,
-            val assetIds: List<String>,
-            val assetVars: Map<String, IloNumVar>,
-            val portfolioDefinitions: List<PortfolioDefinition>,
-            val positionVars: List<PositionVar>,
-            val expectedReturns: Map<String, Double>,
-            val analyses: Map<String, MarketValueAnalysis>,
-            val aggregateNav: Double
-    )
-
-    /**
-     * This data class denotes a decision variable for how much to transact
-     * in a given position
-     *
-     * These decision variables of course must sum up to the appropriate allocation to the assets
-     *
-     * @param numVar this is the weight to trade in the given position
-     */
-    internal data class PositionVar(val id: String, val portfolioId: String, val position: Position, val numVar: IloNumVar)
 
     /**
      * For convex optimization there are two classes of objectives:
@@ -261,7 +237,7 @@ class ConvexOptimizerService(
                 PositionVar(
                         id = "$portfolioId#$positionId",
                         numVar = cplex.numVar(0.0, 1.0, "$portfolioId#$positionId"),
-                        position = Position(id = positionId, quantity = 0.0,assetId = assetId),
+                        position = Position(id = positionId, quantity = 0.0, assetId = assetId),
                         portfolioId = portfolioId
                 )
             } ?: emptyList()

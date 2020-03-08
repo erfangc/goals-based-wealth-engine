@@ -1,6 +1,6 @@
 package io.github.erfangc.goalsengine
 
-data class Node(
+internal data class Node(
         /**
          * The time coordinate
          */
