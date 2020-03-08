@@ -15,6 +15,8 @@ import java.time.LocalDate
 import java.util.*
 import kotlin.math.pow
 
+private const val supportMsg = "only goals based proposal is supported at the moment"
+
 @Service
 class ProposalsService(
         private val goalsEngineService: GoalsEngineService,
@@ -75,13 +77,13 @@ class ProposalsService(
         return requiredIncome * ((1 - (1 / (1 + r).pow(n))) / r)
     }
 
-    private val supportMsg = "only goals based proposal is supported at the moment"
-
     /**
      * Derive investment horizon based on client goals
      */
     private fun investmentHorizon(req: GenerateProposalRequest): Int {
-        return req.client.goals?.retirementYear ?: error(supportMsg)
+        val retirementYear = req.client.goals?.retirementYear ?: error(supportMsg)
+        val year = LocalDate.now().year
+        return retirementYear - year
     }
 
     /**
