@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service
 class WeightComputer(private val assetService: AssetService) {
 
     fun getMarketValue(asset: Asset?, position: Position): Double {
-        return asset?.price?:0 * position.quantity
+        return (asset?.price ?: 0.0) * position.quantity
     }
 
     fun marketValueAnalysis(portfolio: Portfolio): MarketValueAnalysis {

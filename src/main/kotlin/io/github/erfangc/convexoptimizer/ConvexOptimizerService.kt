@@ -12,10 +12,12 @@ import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
 import io.github.erfangc.users.UserService
+import io.github.erfangc.users.WhiteListItem
 import io.github.erfangc.util.MarketValueAnalysis
 import io.github.erfangc.util.WeightComputer
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.util.*
 import kotlin.math.floor
 
 @Service
@@ -69,13 +71,13 @@ class ConvexOptimizerService(
         val ctx = optimizationContext(req)
 
         val cplex = ctx.cplex
-        cplex.objective(IloObjectiveSense.Minimize, varianceExpr(ctx))
+        cplex.addObjective(IloObjectiveSense.Minimize, varianceExpr(ctx))
 
         // total weight must be 100%
         cplex.add(cplex.eq(1.0, cplex.sum(ctx.assetVars.values.toTypedArray())))
 
         // the resulting portfolio must target the level of return
-        cplex.add(cplex.eq(returnExpr(ctx), req.objectives.expectedReturn))
+        cplex.add(cplex.ge(returnExpr(ctx), req.objectives.expectedReturn))
 
         // position level restrictions
         positionConstraints(ctx).forEach { constraint ->
@@ -214,7 +216,7 @@ class ConvexOptimizerService(
         val expectedReturns = expectedReturnsService.getExpectedReturns(assetIds)
 
         // create the actual position variables
-        val positionVars = positionVars(portfolios, cplex)
+        val positionVars = positionVars(portfolios, cplex, userService.getUser().overrides?.whiteList)
 
         val analyses = analyses(portfolios)
 
@@ -238,11 +240,13 @@ class ConvexOptimizerService(
         )
     }
 
-    private fun positionVars(portfolios: List<PortfolioDefinition>, cplex: IloCplex): List<PositionVar> {
+    private fun positionVars(portfolios: List<PortfolioDefinition>,
+                             cplex: IloCplex,
+                             defaultWhiteList: List<WhiteListItem>?): List<PositionVar> {
         return portfolios.flatMap { portfolioDefinition ->
             val portfolio = portfolioDefinition.portfolio
-            portfolio.positions.map { position ->
-                val portfolioId = portfolio.id
+            val portfolioId = portfolio.id
+            val existingPositionVars = portfolio.positions.map { position ->
                 val positionId = position.id
                 PositionVar(
                         id = "$portfolioId#$positionId",
@@ -251,13 +255,25 @@ class ConvexOptimizerService(
                         numVar = cplex.numVar(0.0, 1.0, "$portfolioId#$positionId")
                 )
             }
+            val whiteListVars = defaultWhiteList?.map {
+                whiteListItem ->
+                val positionId = UUID.randomUUID().toString()
+                val assetId = whiteListItem.assetId
+                PositionVar(
+                        id = "$portfolioId#$positionId",
+                        numVar = cplex.numVar(0.0, 1.0, "$portfolioId#$positionId"),
+                        position = Position(id = positionId, quantity = 0.0,assetId = assetId),
+                        portfolioId = portfolioId
+                )
+            } ?: emptyList()
+            existingPositionVars + whiteListVars
         }
     }
 
     private fun assetIds(req: OptimizePortfolioRequest): List<String> {
         val holdings = holdingAssetIds(req)
         val whiteList = defaultWhiteList()
-        return (holdings + whiteList).distinct()
+        return (holdings + whiteList + "USD").distinct()
     }
 
     /**

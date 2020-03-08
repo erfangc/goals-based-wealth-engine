@@ -28,7 +28,7 @@ internal class ConvexOptimizerServiceTest {
                 userService = userService
         )
 
-        val response = svc.optimizePortfolio(OptimizePortfolioRequest(objectives = Objectives(0.55)))
+        val response = svc.optimizePortfolio(OptimizePortfolioRequest(objectives = Objectives(0.055)))
         response.proposedOrders
 
     }

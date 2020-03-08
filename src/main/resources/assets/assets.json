@@ -10,6 +10,15 @@
     "assetClass": "Bond",
     "price": 58.18
   },
+  "USD": {
+    "assetId": "USD",
+    "name": "Cash USD",
+    "description": "",
+    "ticker": "USD",
+    "type": "Cash",
+    "assetClass": "Cash",
+    "price": 1.0
+  },
   "BND": {
     "assetId": "BND",
     "name": "Vanguard Total Bond Market ETF (BND)",
