@@ -1,5 +1,6 @@
 package io.github.erfangc.proposals
 
+import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.assets.AssetTimeSeriesService
 import io.github.erfangc.clients.Client
@@ -44,11 +45,13 @@ internal class ProposalsServiceTest {
         )
         val portfolioService = PortfolioService()
 
+        val analysisService = AnalysisService(marketValueAnalysisService, expectedReturnsService, covarianceService)
         val svc = ProposalsService(
                 goalsEngineService = goalsEngineService,
                 marketValueAnalysisService = marketValueAnalysisService,
                 convexOptimizerService = convexOptimizerService,
-                portfolioService = portfolioService
+                portfolioService = portfolioService,
+                analysisService = analysisService
         )
 
         val response = svc.generateProposal(
@@ -62,7 +65,7 @@ internal class ProposalsServiceTest {
                                         retirementYearlyIncome = 10000.0 * 12
                                 )
                         ),
-                        newInvestment = 600_000.0
+                        newInvestment = 800_000.0
                 )
         )
         println(response.proposal)

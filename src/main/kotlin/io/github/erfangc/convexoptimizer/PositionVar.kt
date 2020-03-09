@@ -11,4 +11,4 @@ import io.github.erfangc.portfolios.Position
  *
  * @param numVar this is the weight to trade in the given position
  */
-internal data class PositionVar(val id: String, val portfolioId: String, val position: Position, val numVar: IloNumVar)
+data class PositionVar(val id: String, val portfolioId: String, val position: Position, val numVar: IloNumVar)

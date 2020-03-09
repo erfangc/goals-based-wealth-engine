@@ -5,7 +5,7 @@ import ilog.cplex.IloCplex
 import io.github.erfangc.assets.Asset
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 
-internal data class OptimizationContext(
+data class OptimizationContext(
         val cplex: IloCplex,
         val request: OptimizePortfolioRequest,
         val assets: Map<String, Asset>,

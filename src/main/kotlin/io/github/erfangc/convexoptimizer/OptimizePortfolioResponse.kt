@@ -1,3 +1,8 @@
 package io.github.erfangc.convexoptimizer
 
-data class OptimizePortfolioResponse(val proposedOrders: List<ProposedOrder>)
+import io.github.erfangc.portfolios.Portfolio
+
+data class OptimizePortfolioResponse(
+        val proposedPortfolios: List<Portfolio>,
+        val proposedOrders: List<ProposedOrder>
+)

@@ -27,7 +27,7 @@ class AnalysisService(
         val expectedReturn = expectedReturn(positions, assetIds, marketValueAnalysis)
         val volatility = volatility(assetIds, positions, marketValueAnalysis)
 
-        return AnalysisResponse(marketValueAnalysis, expectedReturn = expectedReturn, volatility = volatility)
+        return AnalysisResponse(Analysis(marketValueAnalysis, expectedReturn = expectedReturn, volatility = volatility))
     }
 
     private fun volatility(assetIds: List<String>, positions: List<Position>, marketValueAnalysis: MarketValueAnalysis): Double {

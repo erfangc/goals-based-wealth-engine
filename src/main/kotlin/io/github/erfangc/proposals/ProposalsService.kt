@@ -1,5 +1,7 @@
 package io.github.erfangc.proposals
 
+import io.github.erfangc.analysis.AnalysisRequest
+import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.convexoptimizer.ConvexOptimizerService
 import io.github.erfangc.convexoptimizer.Objectives
 import io.github.erfangc.convexoptimizer.OptimizePortfolioRequest
@@ -7,7 +9,6 @@ import io.github.erfangc.convexoptimizer.PortfolioDefinition
 import io.github.erfangc.goalsengine.Cashflow
 import io.github.erfangc.goalsengine.GoalsEngineService
 import io.github.erfangc.goalsengine.GoalsOptimizationRequest
-import io.github.erfangc.goalsengine.ProbabilityEngine
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
@@ -22,6 +23,7 @@ private const val supportMsg = "only goals based proposal is supported at the mo
 
 @Service
 class ProposalsService(
+        private val analysisService: AnalysisService,
         private val goalsEngineService: GoalsEngineService,
         private val portfolioService: PortfolioService,
         private val marketValueAnalysisService: MarketValueAnalysisService,
@@ -65,6 +67,7 @@ class ProposalsService(
         stopWatch.start()
         val optimizePortfolioResponse = convexOptimizerService.optimizePortfolio(
                 OptimizePortfolioRequest(
+                        newInvestments = req.newInvestment,
                         objectives = Objectives(expectedReturn = expectedReturn),
                         portfolios = portfolioDefinitions(req)
                 )
@@ -72,19 +75,13 @@ class ProposalsService(
         stopWatch.stop()
         log.info("Finished convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
 
-        // TODO we can re-compute the probability of achieving goal
-//        ProbabilityEngine(
-//                mu = ,
-//                sigma = ,
-//                investmentHorizon = investmentHorizon,
-//                cashflows = cashflows,
-//                initialWealth = initialWealth,
-//                goal = goal
-//        )
+        val portfolios = portfolioDefinitions(req)?.map { it.portfolio } ?: emptyList()
+        val analysis = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.proposedPortfolios)).analysis
         return GenerateProposalResponse(
                 proposal = Proposal(
                         id = UUID.randomUUID().toString(),
-                        portfolios = portfolioDefinitions(req)?.map { it.portfolio } ?: emptyList(),
+                        portfolios = portfolios,
+                        analysis = analysis,
                         proposedOrders = optimizePortfolioResponse.proposedOrders,
                         probabilityOfSuccess = goalsOptimizationResponse.probabilityOfSuccess
                 )
@@ -105,7 +102,7 @@ class ProposalsService(
         val requiredIncome = goals.retirementYearlyIncome - goals.supplementalYearlyIncome
         // TODO we need to come up with assumptions and calculations for decumulation so we can compute the lump sum
         val n = 30
-        val r = 0.05
+        val r = 0.03
         return requiredIncome * ((1 - (1 / (1 + r).pow(n))) / r)
     }
 

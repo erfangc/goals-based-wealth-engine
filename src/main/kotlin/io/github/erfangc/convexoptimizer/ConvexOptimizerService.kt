@@ -1,11 +1,12 @@
 package io.github.erfangc.convexoptimizer
 
-import ilog.concert.IloConstraint
 import ilog.concert.IloNumExpr
 import ilog.concert.IloObjectiveSense
 import ilog.cplex.IloCplex
-import io.github.erfangc.assets.Asset
 import io.github.erfangc.assets.AssetService
+import io.github.erfangc.convexoptimizer.PositionConstraintBuilder.positionConstraints
+import io.github.erfangc.convexoptimizer.PositionVariablesFactory.positionVars
+import io.github.erfangc.convexoptimizer.SolutionParser.parseSolution
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
@@ -14,22 +15,25 @@ import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
 import io.github.erfangc.users.UserService
-import io.github.erfangc.users.WhiteListItem
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.util.*
-import kotlin.math.floor
 
+/**
+ * ConvexOptimizerService performs build portfolios or modify existing portfolios
+ * that results in specific recommended transactions
+ */
 @Service
 class ConvexOptimizerService(
         private val marketValueAnalysisService: MarketValueAnalysisService,
         private val expectedReturnsService: ExpectedReturnsService,
-        private val covarianceService: CovarianceService,
+        covarianceService: CovarianceService,
         private val assetService: AssetService,
         private val userService: UserService
 ) {
 
-    private val logger = LoggerFactory.getLogger(ConvexOptimizerService::class.java)
+    private val log = LoggerFactory.getLogger(ConvexOptimizerService::class.java)
+
+    private val varianceExpressionBuilder = VarianceExpressionBuilder(covarianceService)
 
     /**
      * For convex optimization there are two classes of objectives:
@@ -40,15 +44,28 @@ class ConvexOptimizerService(
      * Furthermore, we target an expected level of returns
      *
      * 2 - If a target (model) portfolio is provided, we minimize tracking error
-     * to that of the model portfolio
+     * to that of the model portfolio (not done yet)
      *
      */
     fun optimizePortfolio(req: OptimizePortfolioRequest): OptimizePortfolioResponse {
 
+        log.info("Beginning convex optimization for ${req.portfolios?.size ?: 0} portfolios")
+
+        // create an OptimizationContext instance to keep track of reusable references like
+        // the decision variables, assets lookup etc.
         val ctx = optimizationContext(req)
 
+        log.info(
+                "Built OptimizationContext for convex optimization," +
+                " assetVars=${ctx.assetVars.size}," +
+                " positionVars=${ctx.positionVars.size}," +
+                " aggregateNav=${ctx.aggregateNav}"
+        )
+
         val cplex = ctx.cplex
-        cplex.addObjective(IloObjectiveSense.Minimize, varianceExpr(ctx))
+
+        // create the objective which is to minimize risk (our constraint is to target return)
+        cplex.addObjective(IloObjectiveSense.Minimize, varianceExpressionBuilder.varianceExpr(ctx))
 
         // total weight must be 100%
         cplex.add(cplex.eq(1.0, cplex.sum(ctx.assetVars.values.toTypedArray())))
@@ -62,72 +79,12 @@ class ConvexOptimizerService(
         }
 
         if (!cplex.solve()) {
+            log.error("Unable to solve the convex optimization problem cplex.status=${cplex.status}")
             throw RuntimeException("The convex optimization problem cannot be solved")
         }
 
-        // parse the solution back into a portfolio
-        return OptimizePortfolioResponse(proposedOrders = parseOrders(ctx))
-    }
-
-    private fun parseOrders(ctx: OptimizationContext): List<ProposedOrder> {
-        return ctx
-                .positionVars
-                .groupBy { it.portfolioId }
-                .flatMap { (portfolioId, positionVars) ->
-                    positionVars.map {
-                        // the numVar are tradeWeight to the aggregate
-                        positionVar ->
-                        val aggWt = ctx.cplex.getValue(positionVar.numVar)
-                        val targetMv = ctx.aggregateNav * aggWt
-                        val position = positionVar.position
-                        val assetId = position.assetId
-                        ProposedOrder(
-                                portfolioId = portfolioId,
-                                assetId = assetId,
-                                positionId = position.id,
-                                quantity = quantity(targetMv, ctx.assets[assetId])
-                        )
-                    }
-                }
-    }
-
-    private fun quantity(targetMv: Double, asset: Asset?): Double {
-        return floor(targetMv / (asset?.price ?: 0.0))
-    }
-
-    private fun positionConstraints(ctx: OptimizationContext): List<IloConstraint> {
-        val cplex = ctx.cplex
-        val analyses = ctx.analyses
-        val aggregateNav = ctx.aggregateNav
-
-        // position variables must 1) when summed, be consistent within their portfolio 2) when summed across assets
-        // be consistent with the allocation to that asset
-        val positionMustSumToAssetConstraints = ctx.positionVars
-                .groupBy { it.position.assetId }
-                .map {
-                    // each asset group should have position sum up to it
-                    (assetId, vars) ->
-                    val assetVar = ctx.assetVars[assetId]
-                    val terms = vars.map { positionVar ->
-                        val portfolioId = positionVar.portfolioId
-                        val positionId = positionVar.position.id
-                        // query the MarketValueAnalysis object for the position weight we've previously memoized
-                        // this analysis also stores the NAV of the portfolio, from which we can derive
-                        // the portfolio's weight to the aggregate
-                        val mvAnalysis = analyses[portfolioId] ?: error("")
-                        val portWt = mvAnalysis.netAssetValue / aggregateNav
-                        val posWt = mvAnalysis.weights[positionId] ?: 0.0
-                        val originalWtToAgg = portWt * posWt
-                        // we use sum here b/c the numVar represent a % weight of the
-                        // aggregateNAV to transact
-                        cplex.sum(positionVar.numVar, originalWtToAgg)
-                    }.toTypedArray()
-                    cplex.eq(cplex.sum(terms), assetVar)
-                }
-        logger.info("Created ${positionMustSumToAssetConstraints.size} position constraints across " +
-                "${ctx.assetIds.size} assets and " +
-                "${ctx.portfolioDefinitions.size} portfolios")
-        return positionMustSumToAssetConstraints
+        // parse the solution back into a portfolio / orders
+        return parseSolution(ctx)
     }
 
     private fun analyses(portfolioDefinitions: List<PortfolioDefinition>): Map<String, MarketValueAnalysis> {
@@ -139,27 +96,10 @@ class ConvexOptimizerService(
         }.toMap()
     }
 
-    private fun varianceExpr(ctx: OptimizationContext): IloNumExpr {
-        val cplex = ctx.cplex
-        //
-        // build the risk terms on which we minimize
-        //
-        val response = covarianceService.computeCovariances(ctx.assetIds)
-        val covariances = response.covariances
-        val assetIndexLookup = response.assetIndexLookup
-        val varianceTerms = ctx.assetIds.flatMap { a1 ->
-            ctx.assetIds.map { a2 ->
-                val a1Idx = assetIndexLookup[a1] ?: error("")
-                val a2Idx = assetIndexLookup[a2] ?: error("")
-                val covariance = covariances[a1Idx][a2Idx]
-                val a1Var = ctx.assetVars[a1] ?: error("")
-                val a2Var = ctx.assetVars[a2] ?: error("")
-                cplex.prod(a1Var, a2Var, covariance)
-            }
-        }.toTypedArray()
-        return cplex.sum(varianceTerms)
-    }
-
+    /**
+     * Construct the CPLEX expression that represent
+     * expected returns as a function of asset weights
+     */
     private fun returnExpr(ctx: OptimizationContext): IloNumExpr {
         val cplex = ctx.cplex
         val returnExpr = ctx.assetIds.map { assetId ->
@@ -173,17 +113,25 @@ class ConvexOptimizerService(
     private fun optimizationContext(req: OptimizePortfolioRequest,
                                     cplex: IloCplex = IloCplex()): OptimizationContext {
         // from the market value analyse we can formulate position level constraints
-        val portfolios = req.portfolios ?: listOf(
-                PortfolioDefinition(
-                        portfolio = Portfolio(
-                                id = "new-portfolio",
-                                // TODO new portfolio should start with a pre-defined amount given by the request
-                                positions = listOf(
-                                        Position(id = "CASH", assetId = "USD", quantity = 1_000_000.0)
-                                )
-                        )
-                )
+        val portfolios = (req.portfolios ?: emptyList()) + listOfNotNull(
+                req.newInvestments?.let { newInvestments ->
+                    PortfolioDefinition(
+                            portfolio = Portfolio(
+                                    id = "new-portfolio",
+                                    positions = listOf(
+                                            Position(id = "CASH", assetId = "USD", quantity = newInvestments)
+                                    )
+                            )
+                    )
+                }
         )
+
+        if (portfolios.isEmpty()) {
+            // it is not possible to construct a portfolio
+            // without existing portfolios or an new amount to invest
+            throw IllegalStateException("Unable to proceed with convex optimization without either existing portfolios or a new investment amount")
+        }
+
         val assetIds = assetIds(req)
         val assets = assetService.getAssets(assetIds).associateBy { it.assetId }
 
@@ -216,48 +164,11 @@ class ConvexOptimizerService(
         )
     }
 
-    private fun positionVars(portfolios: List<PortfolioDefinition>,
-                             cplex: IloCplex,
-                             defaultWhiteList: List<WhiteListItem>?): List<PositionVar> {
-        return portfolios.flatMap { portfolioDefinition ->
-            val portfolio = portfolioDefinition.portfolio
-            val portfolioId = portfolio.id
-            val existingPositionVars = portfolio.positions.map { position ->
-                val positionId = position.id
-                PositionVar(
-                        id = "$portfolioId#$positionId",
-                        portfolioId = portfolioId,
-                        position = position,
-                        numVar = cplex.numVar(-1.0, 0.0, "$portfolioId#$positionId")
-                )
-            }
-            val whiteListVars = defaultWhiteList?.map {
-                whiteListItem ->
-                val positionId = UUID.randomUUID().toString()
-                val assetId = whiteListItem.assetId
-                PositionVar(
-                        id = "$portfolioId#$positionId",
-                        numVar = cplex.numVar(0.0, 1.0, "$portfolioId#$positionId"),
-                        position = Position(id = positionId, quantity = 0.0, assetId = assetId),
-                        portfolioId = portfolioId
-                )
-            } ?: emptyList()
-            existingPositionVars + whiteListVars
-        }
-    }
-
     private fun assetIds(req: OptimizePortfolioRequest): List<String> {
         val holdings = holdingAssetIds(req)
-        val whiteList = defaultWhiteList()
-        return (holdings + whiteList + "USD").distinct()
-    }
-
-    /**
-     * Figure out the default white list for the current user
-     */
-    private fun defaultWhiteList(): List<String> {
         val user = userService.getUser()
-        return user.overrides?.whiteList?.map { it.assetId } ?: emptyList()
+        val whiteList = user.overrides?.whiteList?.map { it.assetId } ?: emptyList()
+        return (holdings + whiteList + "USD").distinct()
     }
 
     private fun holdingAssetIds(req: OptimizePortfolioRequest): List<String> {
