@@ -14,6 +14,6 @@ data class OptimizationContext(
         val portfolioDefinitions: List<PortfolioDefinition>,
         val positionVars: List<PositionVar>,
         val expectedReturns: Map<String, Double>,
-        val analyses: Map<String, MarketValueAnalysis>,
+        val marketValueAnalyses: Map<String, MarketValueAnalysis>,
         val aggregateNav: Double
 )

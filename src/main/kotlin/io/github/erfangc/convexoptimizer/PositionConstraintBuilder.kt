@@ -9,7 +9,7 @@ object PositionConstraintBuilder {
 
     fun positionConstraints(ctx: OptimizationContext): List<IloConstraint> {
         val cplex = ctx.cplex
-        val analyses = ctx.analyses
+        val analyses = ctx.marketValueAnalyses
         val aggregateNav = ctx.aggregateNav
 
         // position variables must 1) when summed, be consistent within their portfolio 2) when summed across assets
