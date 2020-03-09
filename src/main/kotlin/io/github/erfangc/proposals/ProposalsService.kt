@@ -24,6 +24,7 @@ private const val supportMsg = "only goals based proposal is supported at the mo
 @Service
 class ProposalsService(
         private val analysisService: AnalysisService,
+        private val proposalCrudService: ProposalCrudService,
         private val goalsEngineService: GoalsEngineService,
         private val portfolioService: PortfolioService,
         private val marketValueAnalysisService: MarketValueAnalysisService,
@@ -47,7 +48,7 @@ class ProposalsService(
         val cashflows = cashflows(req)
         val initialWealth = initialInvestment(req)
         val goal = goal(req)
-        val goalsOptimizationResponse = goalsEngineService.goalsOptimization(
+        val goalsOutput = goalsEngineService.goalsOptimization(
                 GoalsOptimizationRequest(
                         initialWealth = initialWealth,
                         cashflows = cashflows,
@@ -57,11 +58,11 @@ class ProposalsService(
         )
         stopWatch.stop()
         log.info("Finished goals engine to figure out the best risk reward for ${req.client.id}," +
-                " probabilityOfSuccess=${goalsOptimizationResponse.probabilityOfSuccess}, " +
-                " volatility=${goalsOptimizationResponse.volatility}, " +
+                " probabilityOfSuccess=${goalsOutput.probabilityOfSuccess}, " +
+                " volatility=${goalsOutput.volatility}, " +
                 " run time: ${stopWatch.lastTaskTimeMillis} ms")
 
-        val expectedReturn = goalsOptimizationResponse.expectedReturn
+        val expectedReturn = goalsOutput.expectedReturn
         // step 2 - given the target risk reward, use convex optimization to find the actual trades
         log.info("Running convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}")
         stopWatch.start()
@@ -77,15 +78,19 @@ class ProposalsService(
 
         val portfolios = portfolioDefinitions(req)?.map { it.portfolio } ?: emptyList()
         val analysis = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.proposedPortfolios)).analysis
-        return GenerateProposalResponse(
-                proposal = Proposal(
-                        id = UUID.randomUUID().toString(),
-                        portfolios = portfolios,
-                        analysis = analysis,
-                        proposedOrders = optimizePortfolioResponse.proposedOrders,
-                        probabilityOfSuccess = goalsOptimizationResponse.probabilityOfSuccess
-                )
+
+        val proposal = Proposal(
+                id = UUID.randomUUID().toString(),
+                portfolios = portfolios,
+                analysis = analysis,
+                proposedOrders = optimizePortfolioResponse.proposedOrders,
+                probabilityOfSuccess = goalsOutput.probabilityOfSuccess
         )
+
+        if (req.save) {
+            proposalCrudService.saveProposal(proposal)
+        }
+        return GenerateProposalResponse(proposal = proposal)
     }
 
     /**

@@ -7,7 +7,7 @@ import java.util.*
 class UserService {
     fun getUser(): User {
         return User(
-                id = UUID.randomUUID().toString(),
+                id = "erfangc",
                 address = "8710 51St Ave",
                 email =  "erfangc@gmail.com",
                 firmName = "Self Employed",
