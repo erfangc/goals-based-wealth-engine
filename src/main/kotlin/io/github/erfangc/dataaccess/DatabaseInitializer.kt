@@ -30,7 +30,7 @@ class DatabaseInitializer(private val jdbcTemplate: JdbcTemplate) {
         """.trimIndent())
         //language=PostgreSQL
         jdbcTemplate.execute("""
-            CREATE INDEX idxClientId ON portfolios (clientId)
+            CREATE INDEX IF NOT EXISTS idxClientId ON portfolios (clientId)
         """.trimIndent())
     }
 
@@ -48,7 +48,7 @@ class DatabaseInitializer(private val jdbcTemplate: JdbcTemplate) {
         """.trimIndent())
         //language=PostgreSQL
         jdbcTemplate.execute("""
-            CREATE INDEX idxClientId ON portfolios (clientId)
+            CREATE INDEX IF NOT EXISTS idxClientId ON proposals (clientId)
         """.trimIndent())
     }
 

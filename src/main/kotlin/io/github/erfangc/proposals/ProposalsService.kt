@@ -125,7 +125,11 @@ class ProposalsService(
      */
     private fun cashflows(req: GenerateProposalRequest): List<Cashflow> {
         val year = LocalDate.now().year
-        return req.client.goals?.knownCashflows?.map { Cashflow(t = it.year - year, amount = it.amount) }
+        return req
+                .client
+                .goals
+                ?.knownCashflows
+                ?.map { Cashflow(t = it.year - year, amount = it.amount) }
                 ?: error(supportMsg)
     }
 

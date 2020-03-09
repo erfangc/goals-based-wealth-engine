@@ -18,7 +18,7 @@ class PortfolioService(private val userService: UserService, private val jdbcTem
                 mapOf("clientId" to clientId, "userId" to userId)
         ).map {
             row ->
-            om.readValue(row["json"].toString())
+            om.readValue<Portfolio>(row["json"].toString())
         }
     }
 
@@ -34,11 +34,11 @@ class PortfolioService(private val userService: UserService, private val jdbcTem
         val json = om.writeValueAsString(portfolio)
         val updateSql = """
             INSERT INTO portfolios (id, userId, clientId, json)
-            VALUES (:id, :userId, :json, :clientId)
-            ON CONFLICT (id)
+            VALUES (:id, :userId, CAST(:json AS json), :clientId)
+            ON CONFLICT (id, userId)
             DO
             UPDATE
-            SET userId = :userId, json = :json, clientId = :clientId
+            SET userId = :userId, json = CAST(:json AS json), clientId = :clientId
         """.trimIndent()
         jdbcTemplate.update(
                 updateSql,
@@ -56,7 +56,7 @@ class PortfolioService(private val userService: UserService, private val jdbcTem
         val userId = userService.getUser().id
         val client = getPortfolio(id)
         jdbcTemplate.update(
-                "DELETE FROM portfolios WHERE id = :id userId = :userId",
+                "DELETE FROM portfolios WHERE id = :id AND userId = :userId",
                 mapOf("id" to id, "userId" to userId)
         )
         return client

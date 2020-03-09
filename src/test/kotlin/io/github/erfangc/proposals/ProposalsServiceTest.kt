@@ -1,5 +1,6 @@
 package io.github.erfangc.proposals
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.assets.AssetTimeSeriesService
@@ -12,6 +13,7 @@ import io.github.erfangc.goalsengine.GoalsEngineService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
 import io.github.erfangc.users.UserService
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
@@ -43,15 +45,18 @@ internal class ProposalsServiceTest {
                 userService = userService,
                 expectedReturnsService = expectedReturnsService
         )
-        val portfolioService = PortfolioService()
+        val portfolioService = PortfolioService(userService, mockk())
 
         val analysisService = AnalysisService(marketValueAnalysisService, expectedReturnsService, covarianceService)
+        val proposalCrudService = ProposalCrudService(userService, jacksonObjectMapper(), mockk())
+
         val svc = ProposalsService(
                 goalsEngineService = goalsEngineService,
                 marketValueAnalysisService = marketValueAnalysisService,
                 convexOptimizerService = convexOptimizerService,
                 portfolioService = portfolioService,
-                analysisService = analysisService
+                analysisService = analysisService,
+                proposalCrudService = proposalCrudService
         )
 
         val response = svc.generateProposal(
