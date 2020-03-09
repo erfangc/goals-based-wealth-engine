@@ -3,6 +3,25 @@
 Wealth Engine is a server that handles an advisor's workflow from connecting to accounts and automatically recommending
 portfolios to meet clients' investment goals and automatically reminding people to re-balance
 
+# How to run the server
+
+In order to run the server, you must tell the running JVM where to look for the CPLEX binaries. CPLEX is the native
+library we use for convex optimization
+
+In IntelliJ IDEA:
+
+```
+# Add this to your IntelliJ IDEA's VM options in the project's run configuration
+-Djava.library.path=$FileDirRelativeToProjectRoot$/bin
+```
+
+On the command line:
+
+```
+# the pom.xml have been setup properly already so no further action is necessary
+mvn clean test
+```
+
 # High level proposal workflow
 
 [![](https://mermaid.ink/img/eyJjb2RlIjoiZ3JhcGggVERcbiAgQVtTdGFydF0gLS0-IEJbR29hbHMgRW5naW5lXVxuICBCIC0tPnzOvCwgz4MsIE90aGVyIGNvbnN0cmFpbnRzLCBFeGlzdGluZyBwb3J0Zm9saW9zfCBDW0NvbnZleCBPcHRpbWl6ZXJdXG4gIEMgLS0-fFByb3Bvc2VkIHBvcnRmb2xpb3N8IERbQW5hbHlzaXMgRW5naW5lc11cbiAgRCAtLT58QW5hbHlzaXN8IEVbRW5kXVxuXG5cdCIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In19)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoiZ3JhcGggVERcbiAgQVtTdGFydF0gLS0-IEJbR29hbHMgRW5naW5lXVxuICBCIC0tPnzOvCwgz4MsIE90aGVyIGNvbnN0cmFpbnRzLCBFeGlzdGluZyBwb3J0Zm9saW9zfCBDW0NvbnZleCBPcHRpbWl6ZXJdXG4gIEMgLS0-fFByb3Bvc2VkIHBvcnRmb2xpb3N8IERbQW5hbHlzaXMgRW5naW5lc11cbiAgRCAtLT58QW5hbHlzaXN8IEVbRW5kXVxuXG5cdCIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In19)
