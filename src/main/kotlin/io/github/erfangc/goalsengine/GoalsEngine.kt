@@ -3,6 +3,7 @@ package io.github.erfangc.goalsengine
 import io.github.erfangc.goalsengine.BrownianMotionFactory.forWealth
 import org.apache.commons.math3.distribution.NormalDistribution
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.ln
@@ -122,6 +123,9 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
      * when chosen from the EfficientFrontier
      */
     fun findOptimalRiskReward(): OptimalRiskReward {
+        if (this.initialWealth <= 0.0) {
+            throw RuntimeException("initial wealth cannot be zero, either import some portfolios or specify a new investment amount")
+        }
         val musToTry = portfolioChoices.mus()
 
         //
