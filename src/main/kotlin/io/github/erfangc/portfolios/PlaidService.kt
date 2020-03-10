@@ -18,7 +18,7 @@ class PlaidService(private val plaidClient: PlaidClient,
      * Links all investment accounts found via the Plaid
      * public token to the given clientId (client as in an advisor's client not a Plaid API client)
      */
-    fun linkItem(clientId: String, publicToken: String): List<Portfolio> {
+    fun linkItem(clientId: String, publicToken: String): LinkItemResponse {
         // per Plaid flows, exchange an public token for an access token
         val accessToken = accessToken(publicToken)
         val investments = investmentHoldings(accessToken)
@@ -62,7 +62,7 @@ class PlaidService(private val plaidClient: PlaidClient,
             portfolioService.savePortfolio(portfolio)
         }
 
-        return updatedPortfolios
+        return LinkItemResponse(updatedPortfolios)
     }
 
     private fun portfolios(clientId: String): Map<String?, Portfolio> {
