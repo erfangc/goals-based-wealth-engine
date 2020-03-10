@@ -7,7 +7,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Service
 
 @Service
-class PortfolioService(private val userService: UserService, private val jdbcTemplate: NamedParameterJdbcTemplate) {
+class PortfolioService(private val userService: UserService,
+                       private val jdbcTemplate: NamedParameterJdbcTemplate) {
 
     private val om = jacksonObjectMapper()
 
