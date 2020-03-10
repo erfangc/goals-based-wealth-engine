@@ -27,7 +27,7 @@ class ProposalCrudService(private val userService: UserService,
         val json = objectMapper.writeValueAsString(proposal)
         val updateSql = """
             INSERT INTO proposals (id, userId, clientId, json)
-            VALUES (:id, :userId, CAST(:json AS json), :clientId)
+            VALUES (:id, :userId, :clientId, CAST(:json AS json))
             ON CONFLICT (id, userId)
             DO
             UPDATE

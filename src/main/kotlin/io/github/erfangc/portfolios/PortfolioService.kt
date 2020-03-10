@@ -17,8 +17,7 @@ class PortfolioService(private val userService: UserService,
         return jdbcTemplate.queryForList(
                 "SELECT * FROM portfolios WHERE userId = :userId AND clientId = :clientId",
                 mapOf("clientId" to clientId, "userId" to userId)
-        ).map {
-            row ->
+        ).map { row ->
             om.readValue<Portfolio>(row["json"].toString())
         }
     }
@@ -35,7 +34,7 @@ class PortfolioService(private val userService: UserService,
         val json = om.writeValueAsString(portfolio)
         val updateSql = """
             INSERT INTO portfolios (id, userId, clientId, json)
-            VALUES (:id, :userId, CAST(:json AS json), :clientId)
+            VALUES (:id, :userId, :clientId, CAST(:json AS json))
             ON CONFLICT (id, userId)
             DO
             UPDATE

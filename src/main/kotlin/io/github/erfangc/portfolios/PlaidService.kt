@@ -4,16 +4,16 @@ import com.plaid.client.PlaidClient
 import com.plaid.client.request.InvestmentsHoldingsGetRequest
 import com.plaid.client.request.ItemPublicTokenExchangeRequest
 import com.plaid.client.response.InvestmentsHoldingsGetResponse
-import io.github.erfangc.assets.AssetService
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.lang.RuntimeException
 import java.util.*
 
 @Service
 class PlaidService(private val plaidClient: PlaidClient,
                    private val portfolioService: PortfolioService,
-                   private val assetService: AssetService
+                   private val plaidHoldingConversionService: PlaidHoldingConversionService
 ) {
+    private val log = LoggerFactory.getLogger(PlaidService::class.java)
     /**
      * Links all investment accounts found via the Plaid
      * public token to the given clientId (client as in an advisor's client not a Plaid API client)
@@ -21,44 +21,39 @@ class PlaidService(private val plaidClient: PlaidClient,
     fun linkItem(clientId: String, publicToken: String): List<Portfolio> {
         // per Plaid flows, exchange an public token for an access token
         val accessToken = accessToken(publicToken)
-        val investmentHoldings = investmentHoldings(publicToken)
+        val investments = investmentHoldings(accessToken)
+
+        val item = investments.item
+
+        // accounts = Plaid linked accounts, portfolios = our internal representation
+        val accounts = investments.accounts.associateBy { it.accountId }
         val portfolios = portfolios(clientId)
 
-        val item = investmentHoldings.item
-        val institutionId = item.institutionId
-        val itemId = item.itemId
-
-        val accountHoldings = investmentHoldings.holdings.groupBy { it.accountId }
-        val securities = investmentHoldings.securities.associateBy { it.securityId }
+        // utilities
+        val accountHoldings = investments.holdings.groupBy { it.accountId }
+        val converter = plaidHoldingConversionService.converter(investments)
 
         // for every pair of accountId to holding, create a portfolio (or replace an existing one as a sync)
         val updatedPortfolios = accountHoldings
                 .map { (accountId, holdings) ->
                     val portfolio = portfolios[accountId]
-                    val positions = holdings.map { holding ->
-                        val security = securities[holding.securityId] ?: error("")
-                        val asset = assetService.getAssetByCUSIP(security.cusip)
-                                ?: throw RuntimeException("cannot find security ${security.cusip}")
-                        val assetId = asset.assetId
-                        val quantity = holding.quantity
-                        val costBasis = holding.costBasis
-                        Position(
-                                id = assetId,
-                                assetId = assetId,
-                                quantity = quantity,
-                                cost = costBasis
-                        )
-                    }
+                    val account = accounts[accountId]
+                    log.info("Processing Plaid linked account $accountId, name=${account?.name}")
+                    val positions = holdings.mapNotNull { converter.convert(it) }
                     portfolio?.copy(positions = positions, source = portfolio.source?.copy(accessToken = accessToken))
                             ?: Portfolio(
                                     id = UUID.randomUUID().toString(),
                                     positions = positions,
                                     clientId = clientId,
                                     source = Source(
-                                            institutionId = institutionId,
+                                            name = account?.name,
+                                            mask = account?.mask,
+                                            subType = account?.subtype,
+                                            type = account?.type,
+                                            institutionId = item.institutionId,
                                             accessToken = accessToken,
-                                            accountId = accountId,
-                                            itemId = itemId
+                                            accountId = account?.accountId!!,
+                                            itemId = item.itemId
                                     )
                             )
                 }
