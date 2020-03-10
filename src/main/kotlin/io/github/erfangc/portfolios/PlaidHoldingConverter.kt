@@ -16,9 +16,10 @@ class PlaidHoldingConverter constructor(
         val asset = security
                 .cusip
                 ?.let { cusip -> assetService.getAssetByCUSIP(cusip) }
+                ?: security.tickerSymbol?.let { ticker -> assetService.getAssetByTicker(ticker) }
         if (asset == null) {
             log.info(
-                    "unable to resolve asset with securityId=${security.securityId}, " +
+                    "Unable to resolve asset with securityId=${security.securityId}, " +
                     "name=${security.name}, " +
                     "cusip=${security.cusip}, " +
                     "isin=${security.isin}, " +
