@@ -13,8 +13,10 @@ import io.github.erfangc.goalsengine.GoalsEngineService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
 import io.github.erfangc.users.UserService
+import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.LocalDate
 
 import java.util.*
@@ -45,10 +47,14 @@ internal class ProposalsServiceTest {
                 userService = userService,
                 expectedReturnsService = expectedReturnsService
         )
-        val portfolioService = PortfolioService(userService, mockk())
+        val jdbcTemplate = mockk<NamedParameterJdbcTemplate>()
+        every {
+            jdbcTemplate.queryForList(any(), any<Map<String, *>>())
+        } returns emptyList()
+        val portfolioService = PortfolioService(userService, jdbcTemplate)
 
         val analysisService = AnalysisService(marketValueAnalysisService, expectedReturnsService, covarianceService)
-        val proposalCrudService = ProposalCrudService(userService, jacksonObjectMapper(), mockk())
+        val proposalCrudService = ProposalCrudService(userService, jacksonObjectMapper(), jdbcTemplate)
 
         val svc = ProposalsService(
                 goalsEngineService = goalsEngineService,
@@ -61,6 +67,7 @@ internal class ProposalsServiceTest {
 
         val response = svc.generateProposal(
                 req = GenerateProposalRequest(
+                        save = false,
                         client = Client(
                                 id = UUID.randomUUID().toString(),
                                 lastName = "Erfang",
