@@ -36,6 +36,7 @@ class ConvexOptimizerService(
     private val varianceExpressionBuilder = VarianceExpressionBuilder(covarianceService)
 
     /**
+     *
      * For convex optimization there are two classes of objectives:
      *
      * 1 - We create the objective as minimize
