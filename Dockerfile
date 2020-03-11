@@ -9,4 +9,6 @@ ADD bin /app/bin
 
 RUN ls /app/bin
 
+EXPOSE 8080
+
 ENTRYPOINT ["java","-jar","/app/wealth-engine-0.0.1-SNAPSHOT.jar","-Djava.library.path","/app/bin"]

@@ -16,9 +16,9 @@ class DataAccessConfiguration {
 
     @Bean
     fun dataSource(): DataSource {
-        val url = "jdbc:postgresql://localhost:5432/erfangchen"
-        val username = "postgres"
-        val password = ""
+        val url = System.getenv("JDBC_DATABASE_URL")
+        val username = System.getenv("DATABASE_USERNAME")
+        val password = System.getenv("DATABASE_PASSWORD")
         return DriverDataSource(
                 url,
                 "org.postgresql.Driver",
