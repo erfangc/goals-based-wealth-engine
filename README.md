@@ -8,6 +8,19 @@ portfolios to meet clients' investment goals and automatically reminding people 
 In order to run the server, you must tell the running JVM where to look for the CPLEX binaries. CPLEX is the native
 library we use for convex optimization
 
+Required environment variables:
+
+```bash
+# this VM arg is required for convex optimization to work
+# the ./bin directory is stored in Git LFS (large file storage)
+-Djava.library.path=./bin
+
+# in production use whatever works
+JDBC_DATABASE_URL=jdbc:postgresql://localhost:5432/erfangchen
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=
+```
+
 In IntelliJ IDEA:
 
 ```
