@@ -91,7 +91,9 @@ class ConvexOptimizerService(
         return portfolioDefinitions.map { portfolioDefinition ->
             // figure out how to create position trading
             // variables that must tie back to the asset variables
-            val analysis = marketValueAnalysisService.analyze(MarketValueAnalysisRequest(portfolioDefinition.portfolio))
+            val analysis = marketValueAnalysisService
+                    .marketValueAnalysis(MarketValueAnalysisRequest(portfolioDefinition.portfolio))
+                    .marketValueAnalysis
             portfolioDefinition.portfolio.id to analysis
         }.toMap()
     }

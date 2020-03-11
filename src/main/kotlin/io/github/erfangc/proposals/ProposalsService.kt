@@ -141,7 +141,11 @@ class ProposalsService(
         val clientId = req.client.id
         val portfolios = portfolioService.getForClientId(clientId)
         val mvAnalyses = portfolios
-                ?.map { portfolio -> portfolio.id to marketValueAnalysisService.analyze(MarketValueAnalysisRequest(portfolio)) }
+                ?.map { portfolio -> portfolio.id to
+                        marketValueAnalysisService
+                                .marketValueAnalysis(MarketValueAnalysisRequest(portfolio))
+                                .marketValueAnalysis
+                }
                 ?.toMap() ?: emptyMap()
         return mvAnalyses.entries.sumByDouble { it.value.netAssetValue } + req.newInvestment
     }

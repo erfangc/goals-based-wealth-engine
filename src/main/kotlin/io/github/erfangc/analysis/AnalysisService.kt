@@ -71,10 +71,10 @@ class AnalysisService(
     }
 
     private fun marketValueAnalysis(positions: List<Position>): MarketValueAnalysis {
-        return marketValueAnalysisService.analyze(MarketValueAnalysisRequest(Portfolio(
+        return marketValueAnalysisService.marketValueAnalysis(MarketValueAnalysisRequest(Portfolio(
                 id = "",
                 positions = positions
-        )))
+        ))).marketValueAnalysis
     }
 
 }
