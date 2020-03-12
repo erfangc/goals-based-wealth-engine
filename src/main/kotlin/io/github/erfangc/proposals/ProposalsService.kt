@@ -77,8 +77,8 @@ class ProposalsService(
         log.info("Finished convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
 
         val portfolios = portfolioDefinitions(req)?.map { it.portfolio } ?: emptyList()
-        val analysisResponse = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.proposedPortfolios))
-        val analysis = analysisResponse.analysis
+        val proposedAnalysisResponse = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.proposedPortfolios))
+        val originalAnalysisResponse = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.originalPortfolios))
 
         val proposal = Proposal(
                 id = UUID.randomUUID().toString(),
@@ -89,15 +89,41 @@ class ProposalsService(
         if (req.save) {
             proposalCrudService.saveProposal(proposal)
         }
+        val oAnalysis = originalAnalysisResponse.analysis
+        val pAnalysis = proposedAnalysisResponse.analysis
         return GenerateProposalResponse(
                 proposal = proposal,
                 analyses = Analyses(
-                        marketValueAnalysis = analysis.marketValueAnalysis,
-                        volatility = analysis.volatility,
-                        expectedReturn = analysis.expectedReturn,
-                        probabilityOfSuccess = goalsOutput.probabilityOfSuccess
+                        expectedReturn = ExpectedReturn(
+                                original = oAnalysis.expectedReturn,
+                                proposed = pAnalysis.expectedReturn
+                        ),
+                        weights = Weights(
+                                original = oAnalysis.marketValueAnalysis.weights,
+                                proposed = pAnalysis.marketValueAnalysis.weights
+                        ),
+                        marketValue = MarketValue(
+                                original = oAnalysis.marketValueAnalysis.marketValue,
+                                proposed = pAnalysis.marketValueAnalysis.marketValue
+                        ),
+                        volatility = Volatility(
+                                original = oAnalysis.volatility,
+                                proposed = pAnalysis.volatility
+                        ),
+                        probabilityOfSuccess = ProbabilityOfSuccess(
+                                original = 0.0, // TODO
+                                proposed = goalsOutput.probabilityOfSuccess
+                        ),
+                        allocations = GenerateProposalResponseAllocations(
+                                original = oAnalysis.marketValueAnalysis.allocations,
+                                proposed = pAnalysis.marketValueAnalysis.allocations
+                        ),
+                        netAssetValue = NetAssetValue(
+                                original = oAnalysis.marketValueAnalysis.netAssetValue,
+                                proposed = oAnalysis.marketValueAnalysis.netAssetValue
+                        )
                 ),
-                assets = analysisResponse.assets
+                assets = proposedAnalysisResponse.assets
         )
     }
 
@@ -147,16 +173,12 @@ class ProposalsService(
      */
     private fun initialInvestment(req: GenerateProposalRequest): Double {
         val clientId = req.client.id
-        val portfolios = portfolioService.getForClientId(clientId)
-        val mvAnalyses = portfolios
-                ?.map { portfolio -> portfolio.id to
-                        marketValueAnalysisService
-                                .marketValueAnalysis(MarketValueAnalysisRequest(portfolio))
-                                .marketValueAnalysis
-                }
-                ?.toMap() ?: emptyMap()
-        return mvAnalyses.entries.sumByDouble { it.value.netAssetValue } + req.newInvestment
+        val existingInvestments = portfolioService.getForClientId(clientId)?.let { portfolios ->
+            marketValueAnalysisService.marketValueAnalysis(MarketValueAnalysisRequest(portfolios))
+                    .marketValueAnalysis
+                    .netAssetValue
+        }
+        return (existingInvestments ?: 0.0) + req.newInvestment
     }
 
 }
-

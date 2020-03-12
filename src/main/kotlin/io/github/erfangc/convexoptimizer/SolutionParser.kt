@@ -54,7 +54,11 @@ object SolutionParser {
             }
             portfolio.copy(positions = updatedExistingPositions + newPositions)
         }
-        return OptimizePortfolioResponse(proposedPortfolios = proposedPortfolios, proposedOrders = proposedOrders)
+        return OptimizePortfolioResponse(
+                originalPortfolios = ctx.request.portfolios?.map { it.portfolio } ?: emptyList(),
+                proposedPortfolios = proposedPortfolios,
+                proposedOrders = proposedOrders
+        )
     }
 
     private fun quantity(targetMv: Double, asset: Asset?): Double {

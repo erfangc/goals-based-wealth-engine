@@ -88,15 +88,10 @@ class ConvexOptimizerService(
         return parseSolution(ctx)
     }
 
-    private fun analyses(portfolioDefinitions: List<PortfolioDefinition>): Map<String, MarketValueAnalysis> {
-        return portfolioDefinitions.map { portfolioDefinition ->
-            // figure out how to create position trading
-            // variables that must tie back to the asset variables
-            val analysis = marketValueAnalysisService
-                    .marketValueAnalysis(MarketValueAnalysisRequest(portfolioDefinition.portfolio))
-                    .marketValueAnalysis
-            portfolioDefinition.portfolio.id to analysis
-        }.toMap()
+    private fun marketValueAnalysis(portfolioDefinitions: List<PortfolioDefinition>): MarketValueAnalysis {
+        return marketValueAnalysisService
+                .marketValueAnalysis(MarketValueAnalysisRequest(portfolioDefinitions.map { it.portfolio }))
+                .marketValueAnalysis
     }
 
     /**
@@ -145,13 +140,11 @@ class ConvexOptimizerService(
         // create the actual position variables
         val positionVars = positionVars(portfolios, cplex, userService.getUser().overrides?.whiteList)
 
-        val analyses = analyses(portfolios)
+        val marketValueAnalysis = marketValueAnalysis(portfolios)
 
         // aggregate the NAV of all portfolios so we can find out how much a position
         // is weighted in the broader aggregated portfolio
-        val aggregateNav = analyses
-                .values
-                .fold(0.0) { acc, analysis -> acc.plus(analysis.netAssetValue) }
+        val aggregateNav = marketValueAnalysis.netAssetValue
 
         return OptimizationContext(
                 cplex,
@@ -162,7 +155,7 @@ class ConvexOptimizerService(
                 portfolios,
                 positionVars,
                 expectedReturns,
-                analyses,
+                marketValueAnalysis,
                 aggregateNav
         )
     }

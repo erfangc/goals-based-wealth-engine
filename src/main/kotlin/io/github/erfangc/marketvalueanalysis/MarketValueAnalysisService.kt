@@ -3,6 +3,7 @@ package io.github.erfangc.marketvalueanalysis
 import io.github.erfangc.assets.Asset
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.portfolios.Position
+import io.github.erfangc.util.PortfolioUtils.assetIds
 import org.springframework.stereotype.Service
 
 @Service
@@ -18,40 +19,55 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
      */
     fun marketValueAnalysis(req: MarketValueAnalysisRequest): MarketValueAnalysisResponse {
 
-        val portfolio = req.portfolio
+        val portfolios = req.portfolios
 
         val assets = assetService
-                .getAssets(portfolio.positions.map { it.assetId })
+                .getAssets(assetIds(portfolios))
                 .associateBy { it.assetId }
 
-        val netAssetValue = portfolio.positions.fold(0.0) { acc, position ->
-            acc + getMarketValue(position = position, asset = assets[position.assetId])
-        }
-
-        val marketValue = portfolio.positions.map { position ->
-            val asset = assets[position.assetId]
-            val marketValue = getMarketValue(asset, position)
-            position.id to marketValue
+        val netAssetValues = portfolios.map { portfolio ->
+            portfolio.id to portfolio.positions.fold(0.0) { acc, position ->
+                acc + getMarketValue(position = position, asset = assets[position.assetId])
+            }
         }.toMap()
 
-        val weights = portfolio.positions.map { position ->
-            position.id to (marketValue[position.id] ?: 0.0) / netAssetValue
+        val netAssetValue = netAssetValues.values.sum()
+
+        val marketValue = portfolios.map { portfolio ->
+            portfolio.id to portfolio.positions.map { position ->
+                val asset = assets[position.assetId]
+                val marketValue = getMarketValue(asset, position)
+                position.id to marketValue
+            }.toMap()
+        }.toMap()
+
+        val weights = portfolios.map { portfolio ->
+            portfolio.id to portfolio.positions.map { position ->
+                val netAssetValue = netAssetValues[portfolio.id] ?: 0.0
+                position.id to netAssetValue.let {
+                    (marketValue[portfolio.id]?.get(position.id) ?: 0.0) / netAssetValue
+                }
+            }.toMap()
         }.toMap()
 
         // create asset Allocation
-        val buckets = portfolio
-                .positions
-                .groupBy { position ->
-                    val asset = assets[position.assetId]
-                    asset?.assetClass ?: "Other"
+        val buckets = portfolios
+                .flatMap { portfolio ->
+                    val portfolioId = portfolio.id
+                    portfolio
+                            .positions
+                            .map { position ->
+                                val positionId = position.id
+                                val assetId = position.assetId
+                                val asset = assets[assetId]
+                                val assetClass = asset?.assetClass ?: "Other"
+                                val weight = (weights[portfolioId]?.get(positionId) ?: 0.0)
+                                assetClass to weight
+                            }
                 }
-                .map { (assetClass, positions) ->
-                    val weight = positions.fold(0.0) { acc, position ->
-                        val positionId = position.id
-                        val weight = weights[positionId] ?: 0.0
-                        acc + weight
-                    }
-                    Bucket(name = assetClass, weight = weight)
+                .groupBy { it.first }
+                .map { (assetClass, weights) ->
+                    Bucket(name = assetClass, weight = weights.sumByDouble { it.second })
                 }
 
         val allocations = Allocations(
@@ -59,10 +75,15 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
         )
 
         return MarketValueAnalysisResponse(
-                MarketValueAnalysis(netAssetValue, marketValue, weights, allocations),
+                MarketValueAnalysis(
+                        netAssetValue = netAssetValue,
+                        netAssetValues = netAssetValues,
+                        weights = weights,
+                        allocations = allocations,
+                        marketValue = marketValue
+                ),
                 assets
         )
     }
 
 }
-

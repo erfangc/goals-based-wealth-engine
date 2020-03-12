@@ -26,9 +26,9 @@ object PositionConstraintBuilder {
                         // query the MarketValueAnalysis object for the position weight we've previously memoized
                         // this analysis also stores the NAV of the portfolio, from which we can derive
                         // the portfolio's weight to the aggregate
-                        val mvAnalysis = analyses[portfolioId] ?: error("")
-                        val portWt = mvAnalysis.netAssetValue / aggregateNav
-                        val posWt = mvAnalysis.weights[positionId] ?: 0.0
+                        val netAssetValue = analyses.netAssetValues[portfolioId] ?: 0.0
+                        val posWt = analyses.weights[portfolioId]?.get(positionId) ?: 0.0
+                        val portWt = netAssetValue / aggregateNav
                         val originalWtToAgg = portWt * posWt
                         // we use sum here b/c the numVar represent a % weight of the
                         // aggregateNAV to transact
