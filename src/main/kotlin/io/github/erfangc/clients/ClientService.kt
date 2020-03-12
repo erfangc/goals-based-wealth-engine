@@ -13,6 +13,14 @@ class ClientService(
         private val objectMapper: ObjectMapper,
         private val userService: UserService
 ) {
+    fun getClients(): List<Client> {
+        val userId = userService.getUser().id
+        return jdbcTemplate
+                .queryForList("SELECT * FROM clients WHERE userId = :userId", mapOf("userId" to userId))
+                .map {
+                    row -> objectMapper.readValue<Client>(row["json"].toString())
+                }
+    }
 
     fun getClient(id: String): Client? {
         val userId = userService.getUser().id

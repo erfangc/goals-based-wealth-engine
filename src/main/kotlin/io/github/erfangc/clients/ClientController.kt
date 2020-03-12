@@ -5,6 +5,10 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/apis/clients")
 class ClientController(private val clientService: ClientService) {
+    @GetMapping
+    fun getClients(): List<Client> {
+        return clientService.getClients()
+    }
     @GetMapping("{id}")
     fun getClient(@PathVariable id: String): Client? {
         return clientService.getClient(id)
