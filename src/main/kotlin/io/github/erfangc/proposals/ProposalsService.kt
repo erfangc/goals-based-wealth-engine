@@ -93,6 +93,7 @@ class ProposalsService(
         val pAnalysis = proposedAnalysisResponse.analysis
         return GenerateProposalResponse(
                 proposal = proposal,
+                proposedPortfolios = optimizePortfolioResponse.proposedPortfolios,
                 analyses = Analyses(
                         expectedReturn = ExpectedReturn(
                                 original = oAnalysis.expectedReturn,
