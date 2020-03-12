@@ -4,6 +4,7 @@ import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisResponse
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
@@ -20,14 +21,22 @@ class AnalysisService(
     fun analyze(req: AnalysisRequest): AnalysisResponse {
         // flatten the group of portfolios into a single one
         val positions = mergePositions(req)
-        val marketValueAnalysis = marketValueAnalysis(positions)
+        val marketValueAnalysisResponse = marketValueAnalysis(positions)
 
         // compute variance
         val assetIds = positions.map { it.assetId }.distinct()
+        val marketValueAnalysis = marketValueAnalysisResponse.marketValueAnalysis
         val expectedReturn = expectedReturn(positions, assetIds, marketValueAnalysis)
         val volatility = volatility(assetIds, positions, marketValueAnalysis)
 
-        return AnalysisResponse(Analysis(marketValueAnalysis, expectedReturn = expectedReturn, volatility = volatility))
+        return AnalysisResponse(
+                Analysis(
+                        marketValueAnalysis = marketValueAnalysis,
+                        expectedReturn = expectedReturn,
+                        volatility = volatility
+                ),
+                assets = marketValueAnalysisResponse.assets
+        )
     }
 
     private fun volatility(assetIds: List<String>, positions: List<Position>, marketValueAnalysis: MarketValueAnalysis): Double {
@@ -70,11 +79,11 @@ class AnalysisService(
                 }
     }
 
-    private fun marketValueAnalysis(positions: List<Position>): MarketValueAnalysis {
+    private fun marketValueAnalysis(positions: List<Position>): MarketValueAnalysisResponse {
         return marketValueAnalysisService.marketValueAnalysis(MarketValueAnalysisRequest(Portfolio(
                 id = "",
                 positions = positions
-        ))).marketValueAnalysis
+        )))
     }
 
 }

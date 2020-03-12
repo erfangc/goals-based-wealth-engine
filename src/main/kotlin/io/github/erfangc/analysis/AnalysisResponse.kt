@@ -1,3 +1,5 @@
 package io.github.erfangc.analysis
 
-data class AnalysisResponse(val analysis: Analysis)
+import io.github.erfangc.assets.Asset
+
+data class AnalysisResponse(val analysis: Analysis, val assets: Map<String, Asset>)

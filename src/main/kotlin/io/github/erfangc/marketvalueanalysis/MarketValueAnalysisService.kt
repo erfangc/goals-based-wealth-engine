@@ -59,7 +59,8 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
         )
 
         return MarketValueAnalysisResponse(
-                MarketValueAnalysis(netAssetValue, marketValue, weights, allocations)
+                MarketValueAnalysis(netAssetValue, marketValue, weights, allocations),
+                assets
         )
     }
 

@@ -77,20 +77,28 @@ class ProposalsService(
         log.info("Finished convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
 
         val portfolios = portfolioDefinitions(req)?.map { it.portfolio } ?: emptyList()
-        val analysis = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.proposedPortfolios)).analysis
+        val analysisResponse = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.proposedPortfolios))
+        val analysis = analysisResponse.analysis
 
         val proposal = Proposal(
                 id = UUID.randomUUID().toString(),
                 portfolios = portfolios,
-                analysis = analysis,
-                proposedOrders = optimizePortfolioResponse.proposedOrders,
-                probabilityOfSuccess = goalsOutput.probabilityOfSuccess
+                proposedOrders = optimizePortfolioResponse.proposedOrders
         )
 
         if (req.save) {
             proposalCrudService.saveProposal(proposal)
         }
-        return GenerateProposalResponse(proposal = proposal)
+        return GenerateProposalResponse(
+                proposal = proposal,
+                analyses = Analyses(
+                        marketValueAnalysis = analysis.marketValueAnalysis,
+                        volatility = analysis.volatility,
+                        expectedReturn = analysis.expectedReturn,
+                        probabilityOfSuccess = goalsOutput.probabilityOfSuccess
+                ),
+                assets = analysisResponse.assets
+        )
     }
 
     /**

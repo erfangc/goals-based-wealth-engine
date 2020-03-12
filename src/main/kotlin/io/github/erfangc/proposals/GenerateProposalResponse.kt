@@ -1,3 +1,10 @@
 package io.github.erfangc.proposals
 
-data class GenerateProposalResponse(val proposal: Proposal)
+import io.github.erfangc.assets.Asset
+
+data class GenerateProposalResponse(
+        val proposal: Proposal,
+        val analyses: Analyses,
+        val assets: Map<String, Asset>
+)
+
