@@ -116,6 +116,7 @@ class ConvexOptimizerService(
                     PortfolioDefinition(
                             portfolio = Portfolio(
                                     id = "new-portfolio",
+                                    name = "New Portfolio",
                                     positions = listOf(
                                             Position(id = "CASH", assetId = "USD", quantity = newInvestments)
                                     )
