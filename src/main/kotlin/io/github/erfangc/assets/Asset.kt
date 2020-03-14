@@ -11,5 +11,6 @@ data class Asset(
         val cusip: String? = null,
         val sedol: String? = null,
         val isin: String? = null,
-        val price: Double? = null
+        val price: Double? = null,
+        val allocations: Allocations? = null
 )
