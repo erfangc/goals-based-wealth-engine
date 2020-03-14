@@ -1,10 +1,13 @@
 package io.github.erfangc.assets.parser
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import io.github.erfangc.assets.*
 import io.github.erfangc.assets.parser.ParserUtil.parsePercentage
 import io.github.erfangc.assets.parser.ParserUtil.parsePreviousClose
+import io.github.erfangc.util.DynamoDBUtil.toItem
 import org.jsoup.Jsoup
 import org.jsoup.select.Elements
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import us.codecraft.xsoup.Xsoup
 
@@ -14,9 +17,11 @@ import us.codecraft.xsoup.Xsoup
  * they disclose that information and is made publicly available
  */
 @Service
-class YFinanceFundAssetParser {
+class YFinanceFundAssetParser(private val ddb: AmazonDynamoDB) {
 
-    fun parseTicker(ticker: String): Asset {
+    private val log = LoggerFactory.getLogger(YFinanceFundAssetParser::class.java)
+
+    fun parseTicker(ticker: String, save: Boolean = false): Asset {
         val allocations = allocations(ticker)
 
         //
@@ -55,7 +60,7 @@ class YFinanceFundAssetParser {
                 .evaluate(profile)
                 .elements, 1)
 
-        return Asset(
+        val asset = Asset(
                 id = ticker,
                 ticker = ticker,
                 price = previousClose,
@@ -66,6 +71,12 @@ class YFinanceFundAssetParser {
                 category = fundOverview["Category"].toString(),
                 type = fundOverview["Legal Type"]?.toString() ?: "Mutual Fund"
         )
+        if (save) {
+            val tableName = "assets"
+            log.info("Saving asset $ticker to DynamoDB table $tableName")
+            ddb.putItem(tableName, toItem(asset))
+        }
+        return asset
     }
 
     private fun parseTable(elements: Elements, valueColumn: Int? = null): Map<String, Any> {

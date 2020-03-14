@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/apis/yfinance-fund-asset-parser/_parse")
 class YFinanceFundAssetParserController(private val yFinanceFundAssetParser: YFinanceFundAssetParser) {
     @PostMapping
-    fun parse(@RequestParam ticker: String): Asset {
-        return yFinanceFundAssetParser.parseTicker(ticker)
+    fun parse(@RequestParam ticker: String, @RequestParam(required = false) save: Boolean = false): Asset {
+        return yFinanceFundAssetParser.parseTicker(ticker, save)
     }
 }

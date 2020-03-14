@@ -17,13 +17,15 @@ import us.codecraft.xsoup.Xsoup
 @Service
 class YFinanceStockAssetParser(private val objectMapper: ObjectMapper) {
 
-    fun parseTicker(ticker: String): Asset {
+    fun parseTicker(ticker: String, save: Boolean = false): Asset {
         val profile = Jsoup
                 .connect("https://finance.yahoo.com/quote/$ticker/profile")
                 .get()
-        val sector = profile.select(
+        val sector = profile
+                .select(
                 "#Col1-0-Profile-Proxy > section > div.asset-profile-container > div > div > p:nth-child(2) > span:nth-child(2)"
-        ).text()
+                )
+                .text()
 
         val summary = Jsoup
                 .connect("https://finance.yahoo.com/quote/$ticker")
@@ -39,7 +41,7 @@ class YFinanceStockAssetParser(private val objectMapper: ObjectMapper) {
 
         val gicsSector = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, sector.replace(" ", ""))
 
-        val asset = Asset(
+        return Asset(
                 id = ticker,
                 ticker = ticker,
                 name = name,
@@ -49,7 +51,6 @@ class YFinanceStockAssetParser(private val objectMapper: ObjectMapper) {
                         gicsSectors = objectMapper.readValue("{\"$gicsSector\": 100.0}")
                 )
         )
-        return asset
     }
 
 }
