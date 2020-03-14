@@ -3,7 +3,7 @@ package io.github.erfangc.assets
 import java.time.Instant
 
 data class Asset(
-        val assetId: String,
+        val id: String,
         val assetClass: String? = null,
         val yield: Double? = null,
         val type: String? = null,

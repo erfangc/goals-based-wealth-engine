@@ -23,7 +23,7 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
 
         val assets = assetService
                 .getAssets(assetIds(portfolios))
-                .associateBy { it.assetId }
+                .associateBy { it.id }
 
         val netAssetValues = portfolios.map { portfolio ->
             portfolio.id to portfolio.positions.fold(0.0) { acc, position ->

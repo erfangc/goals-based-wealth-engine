@@ -132,7 +132,7 @@ class ConvexOptimizerService(
         }
 
         val assetIds = assetIds(req)
-        val assets = assetService.getAssets(assetIds).associateBy { it.assetId }
+        val assets = assetService.getAssets(assetIds).associateBy { it.id }
 
         // each asset is an decision variable
         val assetVars = assetIds.map { assetId -> assetId to cplex.numVar(0.0, 1.0, assetId) }.toMap()

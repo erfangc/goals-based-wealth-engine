@@ -1,12 +1,12 @@
 package io.github.erfangc.assets.parser
 
 import io.github.erfangc.assets.*
+import io.github.erfangc.assets.parser.ParserUtil.parsePercentage
+import io.github.erfangc.assets.parser.ParserUtil.parsePreviousClose
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import org.springframework.stereotype.Service
 import us.codecraft.xsoup.Xsoup
-import java.text.NumberFormat
 
 /**
  * This class parses Yahoo finance for
@@ -15,40 +15,6 @@ import java.text.NumberFormat
  */
 @Service
 class YFinanceFundAssetParser {
-
-    private fun parsePreviousClose(summary: Document?): Double? {
-        val trs = Xsoup
-                .compile("//*[@id=\"quote-summary\"]/div[1]/table/tbody/tr")
-                .evaluate(summary)
-                .elements
-        val cellToFind = "Previous Close"
-        return searchTableRows(trs, cellToFind)
-    }
-
-    private fun parseDouble(value: Any): Double? {
-        return try {
-            val valueAsString = value.toString().trim()
-            val multiplier = when (valueAsString.last()) {
-                'M' -> 1000000
-                'B' -> 1000000000
-                else -> 1
-            }
-            NumberFormat.getNumberInstance(java.util.Locale.US).parse(valueAsString).toDouble() * multiplier
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun searchTableRows(trs: Elements, cellToFind: String): Double? {
-        return trs
-                .find { tr ->
-                    tr.select("td").first().text() == cellToFind
-                }
-                ?.select("td")
-                ?.last()
-                ?.text()
-                ?.let { parseDouble(it) }
-    }
 
     fun parseTicker(ticker: String): Asset {
         val allocations = allocations(ticker)
@@ -90,7 +56,7 @@ class YFinanceFundAssetParser {
                 .elements, 1)
 
         return Asset(
-                assetId = ticker,
+                id = ticker,
                 ticker = ticker,
                 price = previousClose,
                 allocations = allocations,
@@ -116,12 +82,6 @@ class YFinanceFundAssetParser {
             val value = valueElement.text()
             label to value
         }.toMap()
-    }
-
-    companion object {
-        fun parsePercentage(value: Any?): Double {
-            return value?.toString()?.replace("%", "")?.toDoubleOrNull()?:0.0
-        }
     }
 
     private fun allocations(ticker: String): Allocations {
@@ -168,7 +128,6 @@ class YFinanceFundAssetParser {
         //
         // bond ratings
         //
-
         val bondRatingsElements = Xsoup
                 .compile("//*[@id=\"Col1-0-Holdings-Proxy\"]/section/div[2]/div[2]")
                 .evaluate(holdings)

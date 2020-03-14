@@ -30,7 +30,7 @@ class PlaidHoldingConverter constructor(
             )
             return null
         }
-        val assetId = asset.assetId
+        val assetId = asset.id
         val quantity = holding.quantity
         val costBasis = holding.costBasis
         return Position(

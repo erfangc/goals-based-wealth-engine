@@ -132,7 +132,7 @@ class ExpectedReturnsService(
                 factorPremiums["hml"] ?: error("")
         )
 
-        val assets = assetService.getAssets(assetIds).associateBy { it.assetId }
+        val assets = assetService.getAssets(assetIds).associateBy { it.id }
         // create the y(s)
         return assetIds.map { assetId ->
             val asset = assets[assetId]
