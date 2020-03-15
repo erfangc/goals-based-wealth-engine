@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.model.ComparisonOperator
 import com.amazonaws.services.dynamodbv2.model.Condition
 import com.amazonaws.services.dynamodbv2.model.QueryRequest
 import io.github.erfangc.util.DynamoDBUtil.fromItem
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -13,7 +14,9 @@ import java.time.LocalDate
 class AssetTimeSeriesService(private val ddb: AmazonDynamoDB) {
 
     /**
+     * Query DynamoDB
      */
+    @Cacheable
     fun getMonthlyReturnTimeSeries(assetIds: List<String>,
                                    start: LocalDate,
                                    stop: LocalDate): List<TimeSeriesDatum> {
