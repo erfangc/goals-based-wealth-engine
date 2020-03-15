@@ -1,34 +1,35 @@
 package io.github.erfangc.assets
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import org.springframework.core.io.ClassPathResource
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
+import com.amazonaws.services.dynamodbv2.model.AttributeValue
+import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes
+import io.github.erfangc.util.DynamoDBUtil.fromItem
 import org.springframework.stereotype.Service
 
 @Service
-class AssetService {
-
-    private val assetLookup = jacksonObjectMapper()
-            .readValue<Map<String, Asset>>(ClassPathResource("assets/assets.json").inputStream)
-    private val cusipLookup = assetLookup.values.filter { it.cusip != null }.associateBy { it.cusip!! }
-    private val tickerLookup = assetLookup.values.filter { it.ticker != null }.associateBy { it.ticker!! }
+class AssetService(private val ddb: AmazonDynamoDB) {
 
     fun getAssets(assetIds: List<String>): List<Asset> {
-        return assetIds.map {
-            assetLookup[it] ?: throw RuntimeException("cannot find assetId $it")
-        }
+        val assets = assetIds
+                .chunked(25)
+                .flatMap { chunk ->
+                    val tableName = "assets"
+                    val attributeValues = KeysAndAttributes()
+                            .withKeys(chunk.map { assetId -> mapOf("id" to AttributeValue(assetId)) })
+                    val responses = ddb.batchGetItem(mapOf(tableName to attributeValues)).responses
+                    responses[tableName]?.map { item -> fromItem<Asset>(item) } ?: emptyList()
+                }
+        // TODO figure out which assets were missing and populate accordingly
+        return assets
     }
 
     fun getAssetByCUSIP(cusip: String): Asset? {
-        return cusipLookup[cusip]
+        // we need to figure out a way to cheaply source CUSIP at least for Plaid import
+        return null
     }
 
     fun getAssetByTicker(ticker: String): Asset? {
-        return tickerLookup[ticker]
-    }
-
-    fun getAssetsByPublicIdentifiers(publicIdentifiers: List<PublicIdentifier>): List<Asset> {
-        TODO()
+        return getAssets(listOf(ticker)).firstOrNull()
     }
 
 }

@@ -140,7 +140,7 @@ class ExpectedReturnsService(
                 assetId to (asset.yield?.div(100.0) ?: 0.0)
             } else {
                 val monthlyReturns = monthlySeries[assetId] ?: throw IllegalStateException()
-                val y = months.map { monthlyReturns[it]?.value ?: 0.0 }.toDoubleArray()
+                val y = months.map { date -> monthlyReturns[date.toString()]?.value ?: 0.0 }.toDoubleArray()
                 val ols = OLSMultipleLinearRegression()
                 ols.newSampleData(y, x)
                 val betas = ols.estimateRegressionParameters()

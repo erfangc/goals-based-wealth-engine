@@ -1,5 +1,6 @@
 package io.github.erfangc.proposals
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.assets.AssetService
@@ -29,8 +30,9 @@ internal class ProposalsServiceTest {
         /*
         wiring dependencies
          */
-        val assetService = AssetService()
-        val assetTimeSeriesService = AssetTimeSeriesService()
+        val ddb = AmazonDynamoDBClientBuilder.defaultClient()
+        val assetService = AssetService(ddb)
+        val assetTimeSeriesService = AssetTimeSeriesService(ddb)
         val userService = UserService()
         val covarianceService = CovarianceService(assetTimeSeriesService)
         val expectedReturnsService = ExpectedReturnsService(assetTimeSeriesService = assetTimeSeriesService, assetService = assetService)
