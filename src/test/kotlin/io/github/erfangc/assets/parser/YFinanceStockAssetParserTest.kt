@@ -1,6 +1,7 @@
 package io.github.erfangc.assets.parser
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.github.erfangc.assets.parser.yfinance.YFinanceStockAssetParser
 import org.junit.jupiter.api.Test
 
 internal class YFinanceStockAssetParserTest {

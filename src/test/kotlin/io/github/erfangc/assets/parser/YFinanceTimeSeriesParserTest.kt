@@ -2,10 +2,11 @@ package io.github.erfangc.assets.parser
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.github.erfangc.assets.parser.yfinance.YFinanceTimeSeriesParser
 import org.apache.http.impl.client.HttpClientBuilder
 import org.junit.jupiter.api.Test
 
-internal class TimeSeriesParserTest {
+internal class YFinanceTimeSeriesParserTest {
 
     @Test
     fun downloadHistoryForTicker() {
@@ -14,7 +15,7 @@ internal class TimeSeriesParserTest {
         val objectMapper = jacksonObjectMapper().findAndRegisterModules()
         val ddb = AmazonDynamoDBClientBuilder.defaultClient()
 
-        val svc = TimeSeriesParser(httpClient = httpClient, objectMapper = objectMapper, ddb = ddb)
+        val svc = YFinanceTimeSeriesParser(httpClient = httpClient, objectMapper = objectMapper, ddb = ddb)
 
         svc.downloadHistoryForTicker("AGG", true)
         svc.downloadHistoryForTicker("IVV", true)

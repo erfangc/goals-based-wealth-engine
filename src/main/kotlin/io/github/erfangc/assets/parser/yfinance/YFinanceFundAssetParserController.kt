@@ -1,6 +1,7 @@
-package io.github.erfangc.assets.parser
+package io.github.erfangc.assets.parser.yfinance
 
 import io.github.erfangc.assets.Asset
+import io.github.erfangc.assets.parser.yfinance.YFinanceFundAssetParser
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam

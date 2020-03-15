@@ -16,7 +16,7 @@ class AssetTimeSeriesService(private val ddb: AmazonDynamoDB) {
     /**
      * Query DynamoDB
      */
-    @Cacheable
+    @Cacheable("monthly-return-time-series")
     fun getMonthlyReturnTimeSeries(assetIds: List<String>,
                                    start: LocalDate,
                                    stop: LocalDate): List<TimeSeriesDatum> {

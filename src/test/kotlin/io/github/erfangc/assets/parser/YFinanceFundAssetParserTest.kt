@@ -1,6 +1,7 @@
 package io.github.erfangc.assets.parser
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
+import io.github.erfangc.assets.parser.yfinance.YFinanceFundAssetParser
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 

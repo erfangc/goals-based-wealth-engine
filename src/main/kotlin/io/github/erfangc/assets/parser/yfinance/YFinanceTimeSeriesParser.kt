@@ -1,4 +1,4 @@
-package io.github.erfangc.assets.parser
+package io.github.erfangc.assets.parser.yfinance
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.model.PutRequest
@@ -15,11 +15,11 @@ import java.time.Instant
 import java.time.ZoneId
 
 @Service
-class TimeSeriesParser(private val httpClient: HttpClient,
-                       private val objectMapper: ObjectMapper,
-                       private val ddb: AmazonDynamoDB
+class YFinanceTimeSeriesParser(private val httpClient: HttpClient,
+                               private val objectMapper: ObjectMapper,
+                               private val ddb: AmazonDynamoDB
 ) {
-    private val log = LoggerFactory.getLogger(TimeSeriesParser::class.java)
+    private val log = LoggerFactory.getLogger(YFinanceTimeSeriesParser::class.java)
 
     fun downloadHistoryForTicker(ticker: String, save: Boolean): List<TimeSeriesDatum> {
         val jsonNode = httpClient.execute(HttpGet("https://query1.finance.yahoo.com/v8/finance/chart/$ticker?range=max")) { response ->

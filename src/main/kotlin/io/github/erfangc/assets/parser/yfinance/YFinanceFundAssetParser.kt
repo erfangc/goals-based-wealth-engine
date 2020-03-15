@@ -1,4 +1,4 @@
-package io.github.erfangc.assets.parser
+package io.github.erfangc.assets.parser.yfinance
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import io.github.erfangc.assets.*
@@ -74,7 +74,11 @@ class YFinanceFundAssetParser(private val ddb: AmazonDynamoDB) {
         if (save) {
             val tableName = "assets"
             log.info("Saving asset $ticker to DynamoDB table $tableName")
-            ddb.putItem(tableName, toItem(asset))
+            try {
+                ddb.putItem(tableName, toItem(asset))
+            } catch (e: Exception) {
+                log.error("Unable to save ${asset.id} to database", e)
+            }
         }
         return asset
     }
