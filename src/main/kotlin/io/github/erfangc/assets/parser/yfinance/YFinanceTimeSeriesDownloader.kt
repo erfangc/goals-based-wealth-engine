@@ -15,11 +15,11 @@ import java.time.Instant
 import java.time.ZoneId
 
 @Service
-class YFinanceTimeSeriesParser(private val httpClient: HttpClient,
-                               private val objectMapper: ObjectMapper,
-                               private val ddb: AmazonDynamoDB
+class YFinanceTimeSeriesDownloader(private val httpClient: HttpClient,
+                                   private val objectMapper: ObjectMapper,
+                                   private val ddb: AmazonDynamoDB
 ) {
-    private val log = LoggerFactory.getLogger(YFinanceTimeSeriesParser::class.java)
+    private val log = LoggerFactory.getLogger(YFinanceTimeSeriesDownloader::class.java)
 
     fun downloadHistoryForTicker(ticker: String, save: Boolean): List<TimeSeriesDatum> {
         val jsonNode = httpClient.execute(HttpGet("https://query1.finance.yahoo.com/v8/finance/chart/$ticker?range=max")) { response ->
@@ -67,6 +67,6 @@ class YFinanceTimeSeriesParser(private val httpClient: HttpClient,
                 }
             }
         }
-        return monthlyPrices
+        return monthlyReturns
     }
 }

@@ -10,7 +10,11 @@ import org.springframework.stereotype.Service
 class MarketValueAnalysisService(private val assetService: AssetService) {
 
     private fun getMarketValue(asset: Asset?, position: Position): Double {
-        return (asset?.price ?: 0.0) * position.quantity
+        return if (position.assetId == "USD") {
+            position.quantity
+        } else {
+            (asset?.price ?: 0.0) * position.quantity
+        }
     }
 
     /**
@@ -25,6 +29,7 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
                 .getAssets(assetIds(portfolios))
                 .associateBy { it.id }
 
+        // for every portfolio, sum up the market value of all the positions
         val netAssetValues = portfolios.map { portfolio ->
             portfolio.id to portfolio.positions.fold(0.0) { acc, position ->
                 acc + getMarketValue(position = position, asset = assets[position.assetId])
@@ -43,9 +48,9 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
 
         val weights = portfolios.map { portfolio ->
             portfolio.id to portfolio.positions.map { position ->
-                val netAssetValue = netAssetValues[portfolio.id] ?: 0.0
-                position.id to netAssetValue.let {
-                    (marketValue[portfolio.id]?.get(position.id) ?: 0.0) / netAssetValue
+                val nav = netAssetValues[portfolio.id] ?: 0.0
+                position.id to nav.let {
+                    (marketValue[portfolio.id]?.get(position.id) ?: 0.0) / nav
                 }
             }.toMap()
         }.toMap()

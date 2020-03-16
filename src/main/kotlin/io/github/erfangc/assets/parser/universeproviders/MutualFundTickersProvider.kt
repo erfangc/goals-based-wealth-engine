@@ -2,7 +2,7 @@ package io.github.erfangc.assets.parser.universeproviders
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.erfangc.assets.parser.yfinance.YFinanceFundAssetParser
-import io.github.erfangc.assets.parser.yfinance.YFinanceTimeSeriesParser
+import io.github.erfangc.assets.parser.yfinance.YFinanceTimeSeriesDownloader
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class MutualFundTickersProvider(private val httpClient: HttpClient,
                                 private val objectMapper: ObjectMapper,
                                 private val yFinanceFundAssetParser: YFinanceFundAssetParser,
-                                private val yFinanceTimeSeriesParser: YFinanceTimeSeriesParser
+                                private val yFinanceTimeSeriesDownloader: YFinanceTimeSeriesDownloader
 ) {
 
     private val log = LoggerFactory.getLogger(MutualFundTickersProvider::class.java)
@@ -38,8 +38,6 @@ class MutualFundTickersProvider(private val httpClient: HttpClient,
             Thread.sleep(TimeUnit.MILLISECONDS.convert(3, TimeUnit.SECONDS))
             page.incrementAndGet()
         } while (page.get() <= totalPages.get())
-
-
     }
 
     private fun processPage(page: AtomicInteger, totalPages: AtomicInteger) {
@@ -47,9 +45,11 @@ class MutualFundTickersProvider(private val httpClient: HttpClient,
                 .apply {
                     addHeader("content-type", "application/json")
                     addHeader("origin", "https://mutualfunds.com")
-                    entity = StringEntity("""
-                            {"tm":"1-fund-category","r":"Channel#531","only":["meta","data"],"page":${page.get()},"default_tab":"overview"}
-                        """.trimIndent())
+                    entity = StringEntity(
+                        """
+                        {"tm":"1-fund-category","r":"Channel#531","only":["meta","data"],"page":${page.get()},"default_tab":"overview"}
+                        """.trimIndent()
+                    )
                 }
         val content = httpClient
                 .execute(post)
@@ -79,7 +79,7 @@ class MutualFundTickersProvider(private val httpClient: HttpClient,
             log.info("Processing ticker $ticker for page ${page.get()} element $idx")
             try {
                 yFinanceFundAssetParser.parseTicker(ticker, true)
-                yFinanceTimeSeriesParser.downloadHistoryForTicker(ticker, true)
+                yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker, true)
             } catch (e: Exception) {
                 log.error("Unable to fully process ticker $ticker", e)
             }

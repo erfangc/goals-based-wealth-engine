@@ -2,6 +2,7 @@ package io.github.erfangc.convexoptimizer
 
 import ilog.concert.IloNumExpr
 import ilog.concert.IloObjectiveSense
+import ilog.concert.IloRange
 import ilog.cplex.IloCplex
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.convexoptimizer.PositionConstraintBuilder.positionConstraints
@@ -58,9 +59,9 @@ class ConvexOptimizerService(
 
         log.info(
                 "Built OptimizationContext for convex optimization," +
-                " assetVars=${ctx.assetVars.size}," +
-                " positionVars=${ctx.positionVars.size}," +
-                " aggregateNav=${ctx.aggregateNav}"
+                        " assetVars=${ctx.assetVars.size}," +
+                        " positionVars=${ctx.positionVars.size}," +
+                        " aggregateNav=${ctx.aggregateNav}"
         )
 
         val cplex = ctx.cplex
@@ -79,6 +80,11 @@ class ConvexOptimizerService(
             cplex.add(constraint)
         }
 
+        // for any portfolio whose NAV must stay constant, we forbid transfer by fixing
+        // sum of position to original proportion to aggregate NAV
+        val portfolioConstraints = portfolioConstraint(ctx)
+        portfolioConstraints.forEach { constraint -> cplex.add(constraint) }
+
         if (!cplex.solve()) {
             log.error("Unable to solve the convex optimization problem cplex.status=${cplex.status}")
             throw RuntimeException("The convex optimization problem cannot be solved")
@@ -86,6 +92,31 @@ class ConvexOptimizerService(
 
         // parse the solution back into a portfolio / orders
         return parseSolution(ctx)
+    }
+
+    private fun portfolioConstraint(ctx: OptimizationContext): List<IloRange> {
+        val marketValueAnalyses = ctx.marketValueAnalyses
+        val portfolioConstraints = ctx.portfolioDefinitions.filter { it.withdrawRestricted }.map { portfolioDefinition ->
+            val portfolioId = portfolioDefinition.portfolio.id
+            val portfolioWt = (marketValueAnalyses.netAssetValues[portfolioId]
+                    ?: 0.0) / marketValueAnalyses.netAssetValue
+            val terms = ctx
+                    .positionVars
+                    .filter { it.portfolioId == portfolioId }
+                    .map {
+                        val positionId = it.position.id
+                        val positionWt = marketValueAnalyses.weights[portfolioId]?.get(positionId) ?: 0.0
+                        // original weight
+                        val originalWt = positionWt * portfolioWt
+                        ctx.cplex.sum(originalWt, it.numVar)
+                    }
+                    .toTypedArray()
+            ctx.cplex.eq(
+                    ctx.cplex.sum(terms),
+                    portfolioWt
+            )
+        }
+        return portfolioConstraints
     }
 
     private fun marketValueAnalysis(portfolioDefinitions: List<PortfolioDefinition>): MarketValueAnalysis {
@@ -111,19 +142,24 @@ class ConvexOptimizerService(
     private fun optimizationContext(req: OptimizePortfolioRequest,
                                     cplex: IloCplex = IloCplex()): OptimizationContext {
         // from the market value analyse we can formulate position level constraints
-        val portfolios = (req.portfolios ?: emptyList()) + listOfNotNull(
-                req.newInvestments?.let { newInvestments ->
-                    PortfolioDefinition(
-                            portfolio = Portfolio(
-                                    id = "new-portfolio",
-                                    name = "New Portfolio",
-                                    positions = listOf(
-                                            Position(id = "CASH", assetId = "USD", quantity = newInvestments)
+        val portfolios = (
+                (req.portfolios ?: emptyList()) +
+                        listOfNotNull(
+                                req.newInvestments?.let { newInvestments ->
+                                    PortfolioDefinition(
+                                            portfolio = Portfolio(
+                                                    id = "new-portfolio",
+                                                    name = "New Portfolio",
+                                                    positions = listOf(
+                                                            Position(id = "CASH", assetId = "USD", quantity = newInvestments)
+                                                    )
+                                            )
                                     )
-                            )
-                    )
-                }
-        )
+                                }
+                        )
+                )
+                // get rid of any portfolios that might not have a position
+                .filter { it.portfolio.positions.isNotEmpty() }
 
         if (portfolios.isEmpty()) {
             // it is not possible to construct a portfolio
@@ -138,8 +174,12 @@ class ConvexOptimizerService(
         val assetVars = assetIds.map { assetId -> assetId to cplex.numVar(0.0, 1.0, assetId) }.toMap()
         val expectedReturns = expectedReturnsService.getExpectedReturns(assetIds)
 
-        // create the actual position variables
-        val positionVars = positionVars(portfolios, cplex, userService.getUser().overrides?.whiteList)
+        // create the actual position variables (this method is a bit ugly, as it accepts many arguments, however it gets the job done)
+        val positionVars = positionVars(
+                portfolios,
+                cplex,
+                userService.getUser().overrides?.whiteList
+        )
 
         val marketValueAnalysis = marketValueAnalysis(portfolios)
 

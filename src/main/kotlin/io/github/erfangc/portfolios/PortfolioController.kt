@@ -9,7 +9,7 @@ class PortfolioController(private val portfolioService: PortfolioService) {
         return portfolioService.getPortfolio(id)
     }
 
-    @GetMapping("/apis/clients/{id}/portfolios")
+    @GetMapping("/apis/clients/{clientId}/portfolios")
     fun getPortfoliosForClientId(@PathVariable clientId: String): List<Portfolio>? {
         return portfolioService.getForClientId(clientId)
     }

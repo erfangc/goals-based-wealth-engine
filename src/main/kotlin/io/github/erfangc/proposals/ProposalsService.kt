@@ -132,7 +132,13 @@ class ProposalsService(
      * Grab existing portfolios
      */
     private fun portfolioDefinitions(req: GenerateProposalRequest) =
-            portfolioService.getForClientId(req.client.id)?.map { PortfolioDefinition(portfolio = it) }
+            portfolioService
+                    .getForClientId(req.client.id)
+                    ?.map {
+                        portfolio ->
+                        val withdrawRestricted = listOf("ira", "401k").contains(portfolio.source?.subType)
+                        PortfolioDefinition(portfolio = portfolio, withdrawRestricted = withdrawRestricted)
+                    }
 
     /**
      * Derive the goal (lump sum) amount to target at retirement

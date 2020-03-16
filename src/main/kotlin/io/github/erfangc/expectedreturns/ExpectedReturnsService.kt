@@ -134,12 +134,12 @@ class ExpectedReturnsService(
 
         val assets = assetService.getAssets(assetIds).associateBy { it.id }
         // create the y(s)
-        return assetIds.map { assetId ->
+        return assetIds.filter { it != "USD" }.map { assetId ->
             val asset = assets[assetId]
             if (asset?.assetClass == "Bond") {
                 assetId to (asset.yield?.div(100.0) ?: 0.0)
             } else {
-                val monthlyReturns = monthlySeries[assetId] ?: throw IllegalStateException()
+                val monthlyReturns = monthlySeries[assetId] ?: throw IllegalStateException("cannot find monthly returns for $assetId")
                 val y = months.map { date -> monthlyReturns[date.toString()]?.value ?: 0.0 }.toDoubleArray()
                 val ols = OLSMultipleLinearRegression()
                 ols.newSampleData(y, x)
@@ -148,7 +148,7 @@ class ExpectedReturnsService(
                 // expected returns must be annualized
                 assetId to mu * 12
             }
-        }.toMap()
+        }.toMap() + ("USD" to 0.0)
     }
 
     private fun now(): LocalDate {

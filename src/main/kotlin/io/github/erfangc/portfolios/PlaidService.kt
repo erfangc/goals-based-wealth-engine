@@ -6,6 +6,7 @@ import com.plaid.client.request.ItemPublicTokenExchangeRequest
 import com.plaid.client.response.InvestmentsHoldingsGetResponse
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.time.Instant
 import java.util.*
 
 @Service
@@ -40,8 +41,11 @@ class PlaidService(private val plaidClient: PlaidClient,
                     val account = accounts[accountId]
                     log.info("Processing Plaid linked account $accountId, name=${account?.name}")
                     val positions = holdings.mapNotNull { converter.convert(it) }
-                    portfolio?.copy(positions = positions, source = portfolio.source?.copy(accessToken = accessToken))
-                            ?: Portfolio(
+                    portfolio?.copy(
+                            positions = positions,
+                            source = portfolio.source?.copy(accessToken = accessToken),
+                            lastUpdated = Instant.now().toString()
+                    ) ?: Portfolio(
                                     id = UUID.randomUUID().toString(),
                                     positions = positions,
                                     clientId = clientId,

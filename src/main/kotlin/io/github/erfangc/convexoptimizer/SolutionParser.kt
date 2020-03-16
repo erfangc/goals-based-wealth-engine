@@ -15,22 +15,33 @@ object SolutionParser {
                 .positionVars
                 .groupBy { it.portfolioId }
                 .flatMap { (portfolioId, positionVars) ->
-                    positionVars.map {
-                        // the numVar are tradeWeight to the aggregate
-                        positionVar ->
-                        val aggWt = ctx.cplex.getValue(positionVar.numVar)
-                        val targetMv = ctx.aggregateNav * aggWt
-                        val position = positionVar.position
-                        val assetId = position.assetId
-                        ProposedOrder(
-                                portfolioId = portfolioId,
-                                assetId = assetId,
-                                positionId = position.id,
-                                quantity = quantity(targetMv, ctx.assets[assetId])
-                        )
-                    }
+                    positionVars
+                            .map {
+                                // the numVar are tradeWeight to the aggregate
+                                positionVar ->
+                                val aggWt = ctx.cplex.getValue(positionVar.numVar)
+                                val targetMv = ctx.aggregateNav * aggWt
+                                val position = positionVar.position
+                                val assetId = position.assetId
+                                ProposedOrder(
+                                        portfolioId = portfolioId,
+                                        assetId = assetId,
+                                        positionId = position.id,
+                                        // ensure cash get treated as if price = 1
+                                        quantity = if (assetId == "USD") {
+                                            targetMv
+                                        } else {
+                                            quantity(targetMv, ctx.assets[assetId] ?: error(""))
+                                        }
+                                )
+                            }
                 }
-        val orders = proposedOrders.groupBy { it.portfolioId }.mapValues { it.value.associateBy { order -> order.positionId } }
+                .filter { it.quantity != 0.0 }
+
+        val orders = proposedOrders
+                .groupBy { it.portfolioId }
+                .mapValues { it.value.associateBy { order -> order.positionId } }
+
         val portfolioDefinitions = ctx.portfolioDefinitions
 
         // overlay the existing portfolio definitions (which includes any new portfolio created) with orders
@@ -40,8 +51,8 @@ object SolutionParser {
             val portfolioOrders = orders[portfolioId] ?: emptyMap()
             val updatedExistingPositions = portfolio.positions.map { position ->
                 val positionId = position.id
-                val order = portfolioOrders[positionId] ?: error("")
-                position.copy(quantity = position.quantity + order.quantity)
+                val order = portfolioOrders[positionId]
+                position.copy(quantity = position.quantity + (order?.quantity ?: 0.0))
             }
             // append any new positions
             val newPositions = portfolioOrders.keys.subtract(updatedExistingPositions.map { it.id }).map { positionId ->
@@ -61,8 +72,7 @@ object SolutionParser {
         )
     }
 
-    private fun quantity(targetMv: Double, asset: Asset?): Double {
-        return floor(targetMv / (asset?.price ?: 0.0))
+    private fun quantity(targetMv: Double, asset: Asset): Double {
+        return floor(targetMv / (asset.price ?: 0.0))
     }
-
 }

@@ -1,6 +1,7 @@
 package io.github.erfangc.convexoptimizer
 
 import ilog.cplex.IloCplex
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 import io.github.erfangc.portfolios.Position
 import io.github.erfangc.users.WhiteListItem
 import java.util.*
@@ -21,8 +22,8 @@ object PositionVariablesFactory {
      * This is why in addition to asset decision variables, we also define a set of decision variables for the positions
      */
     fun positionVars(portfolios: List<PortfolioDefinition>,
-                             cplex: IloCplex,
-                             defaultWhiteList: List<WhiteListItem>?): List<PositionVar> {
+                     cplex: IloCplex,
+                     defaultWhiteList: List<WhiteListItem>?): List<PositionVar> {
         return portfolios.flatMap { portfolioDefinition ->
             val portfolio = portfolioDefinition.portfolio
             val portfolioId = portfolio.id
