@@ -7,6 +7,8 @@ data class Source(
         val name: String? = null,
         val officialName: String? = null,
         val institutionId: String,
+        val institutionName: String? = null,
+        val institutionPrimaryColor: String? = null,
         val itemId: String,
         val accountId: String,
         val accessToken: String
