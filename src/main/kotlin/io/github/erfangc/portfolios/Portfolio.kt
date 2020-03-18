@@ -1,9 +1,10 @@
 package io.github.erfangc.portfolios
 
 import java.time.Instant
+import java.util.*
 
 data class Portfolio(
-        val id: String,
+        val id: String = UUID.randomUUID().toString(),
         val source: Source? = null,
         val clientId: String? = null,
         val name: String? = null,
