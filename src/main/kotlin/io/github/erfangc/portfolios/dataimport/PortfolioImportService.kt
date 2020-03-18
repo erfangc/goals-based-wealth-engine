@@ -5,6 +5,7 @@ import io.github.erfangc.assets.AssetService
 import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
 class PortfolioImportService(private val assetService: AssetService) {
@@ -80,9 +81,10 @@ class PortfolioImportService(private val assetService: AssetService) {
         val errors = parsedRows.mapNotNull { it.error }
         val positions = parsedRows.mapNotNull { it.position }
 
+        val portfolioId = req.portfolioId ?: UUID.randomUUID().toString()
         return ResolvePortfolioResponse(
                 parsedRows = parsedRows,
-                portfolio = Portfolio(positions = positions),
+                portfolio = Portfolio(positions = positions, id = portfolioId),
                 assets = assets,
                 errors = errors,
                 requiresNavForScaling = headers[1] == "weight"
