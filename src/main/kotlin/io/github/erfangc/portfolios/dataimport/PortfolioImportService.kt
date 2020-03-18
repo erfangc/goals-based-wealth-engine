@@ -40,7 +40,7 @@ class PortfolioImportService(private val assetService: AssetService) {
                     }
                 }
         val prunedLines = if (hasHeaders) lines.drop(1) else lines
-        val parsedRows = prunedLines.mapIndexed { index, line ->
+        val parsedRows = prunedLines.filter { it.isNotBlank() }.mapIndexed { index, line ->
             val parts = line.split(delimiters)
             val part1 = parts[0]
             val part2 = parts[1]
@@ -80,17 +80,14 @@ class PortfolioImportService(private val assetService: AssetService) {
         val errors = parsedRows.mapNotNull { it.error }
         val positions = parsedRows.mapNotNull { it.position }
 
-        val portfolio = Portfolio(
-                name = "Manually imported",
-                positions = positions
-        )
         return ResolvePortfolioResponse(
                 parsedRows = parsedRows,
-                portfolio = portfolio,
+                portfolio = Portfolio(positions = positions),
                 assets = assets,
                 errors = errors,
                 requiresNavForScaling = headers[1] == "weight"
         )
+
     }
 
     private fun quantity(asset: Asset, marketValue: Double): Double {
