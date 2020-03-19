@@ -2,9 +2,11 @@ package io.github.erfangc.assets.parser.yfinance
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.base.CaseFormat
-import io.github.erfangc.assets.*
+import io.github.erfangc.assets.Allocations
+import io.github.erfangc.assets.Asset
+import io.github.erfangc.assets.AssetClassAllocation
+import io.github.erfangc.assets.GicsAllocation
 import io.github.erfangc.assets.parser.ParserUtil.parsePreviousClose
 import io.github.erfangc.util.DynamoDBUtil
 import org.jsoup.Jsoup
@@ -40,17 +42,14 @@ class YFinanceStockAssetParser(private val objectMapper: ObjectMapper, private v
                 .compile("//*[@id=\"Col1-0-Profile-Proxy\"]/section/div[1]/div[1]/h3")
                 .evaluate(profile)
                 .elements
-                .text()
+                .text()?.let { if (it.isBlank()) "Unknown" else it } ?: "Unknown"
 
         val previousClose = parsePreviousClose(summary)
 
         val gicsSector = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, sector.replace(" ", ""))
 
-        val gicsSectors =
-                if (gicsSector.isNullOrEmpty())
-                    GicsAllocation()
-                else
-                    objectMapper.readValue("{\"$gicsSector\": 100.0}")
+        val gicsSectors = determineGicsSector(gicsSector)
+
         val asset = Asset(
                 id = ticker,
                 ticker = ticker,
@@ -75,4 +74,44 @@ class YFinanceStockAssetParser(private val objectMapper: ObjectMapper, private v
         return asset
     }
 
+    fun determineGicsSector(sector: String): GicsAllocation {
+        return when (sector) {
+            "Basic Materials" -> {
+                GicsAllocation(basicMaterials = 100.0)
+            }
+            "Consumer Cyclical" -> {
+                GicsAllocation(consumerCyclical = 100.0)
+            }
+            "Financial Services" -> {
+                GicsAllocation(financialServices = 100.0)
+            }
+            "Real Estate" -> {
+                GicsAllocation(realEstate = 100.0)
+            }
+            "Consumer Defense" -> {
+                GicsAllocation(consumerDefensive = 100.0)
+            }
+            "Healthcare" -> {
+                GicsAllocation(healthCare = 100.0)
+            }
+            "Utilities" -> {
+                GicsAllocation(utilities = 100.0)
+            }
+            "Communication Services" -> {
+                GicsAllocation(communicationServices = 100.0)
+            }
+            "Energy" -> {
+                GicsAllocation(energy = 100.0)
+            }
+            "Industrials" -> {
+                GicsAllocation(industrials = 100.0)
+            }
+            "Technology" -> {
+                GicsAllocation(technology = 100.0)
+            }
+            else -> {
+                GicsAllocation()
+            }
+        }
+    }
 }
