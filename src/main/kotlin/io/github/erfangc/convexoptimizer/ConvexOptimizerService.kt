@@ -201,6 +201,10 @@ class ConvexOptimizerService(
         )
     }
 
+    /**
+     * This is the comprehensive set of assets the user is allowed to hold
+     * regardless of whether the asset is part of existing hold or part of the white list
+     */
     private fun assetIds(req: OptimizePortfolioRequest): List<String> {
         val holdings = holdingAssetIds(req)
         val user = userService.getUser()

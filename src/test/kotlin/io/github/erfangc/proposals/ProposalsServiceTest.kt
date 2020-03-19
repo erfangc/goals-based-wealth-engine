@@ -36,7 +36,14 @@ internal class ProposalsServiceTest {
         val userService = UserService()
         val covarianceService = CovarianceService(assetTimeSeriesService)
         val expectedReturnsService = ExpectedReturnsService(assetTimeSeriesService = assetTimeSeriesService, assetService = assetService)
+        val marketValueAnalysisService1 = MarketValueAnalysisService(assetService = assetService)
+        val analysisService1 = AnalysisService(
+                marketValueAnalysisService = marketValueAnalysisService1,
+                expectedReturnsService = expectedReturnsService,
+                covarianceService = covarianceService
+        )
         val goalsEngineService = GoalsEngineService(
+                analysisService = analysisService1,
                 expectedReturnsService = expectedReturnsService,
                 userService = userService,
                 covarianceService = covarianceService
