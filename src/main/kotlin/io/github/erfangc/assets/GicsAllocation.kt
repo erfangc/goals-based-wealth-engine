@@ -6,7 +6,7 @@ data class GicsAllocation(
         val financialServices: Double = 0.0,
         val realEstate: Double = 0.0,
         val consumerDefensive: Double = 0.0,
-        val healthCare: Double = 0.0,
+        val healthcare: Double = 0.0,
         val utilities: Double = 0.0,
         val communicationServices: Double = 0.0,
         val energy: Double = 0.0,

@@ -133,7 +133,7 @@ class YFinanceFundAssetParser(private val ddb: AmazonDynamoDB) {
                 consumerDefensive = parsePercentage(sectorWeights["Realestate"]),
                 energy = parsePercentage(sectorWeights["Consumer Defensive"]),
                 financialServices = parsePercentage(sectorWeights["Healthcare"]),
-                healthCare = parsePercentage(sectorWeights["Utilities"]),
+                healthcare = parsePercentage(sectorWeights["Utilities"]),
                 industrials = parsePercentage(sectorWeights["Communication Services"]),
                 realEstate = parsePercentage(sectorWeights["Energy"]),
                 technology = parsePercentage(sectorWeights["Industrials"]),
