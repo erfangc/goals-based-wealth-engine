@@ -3,6 +3,15 @@
 Wealth Engine is a server that handles an advisor's workflow from connecting to accounts and automatically recommending
 portfolios to meet clients' investment goals and automatically reminding people to re-balance
 
+# Before you run the server check list
+
+ - AWS AccessSecretKey and AccessKeyId to the correct account. We use DynamoDB to store assets / asset time series
+ > Contact erfangc@gmail.com for an IAM user to get your accessKey
+
+ - Run a PostgresSQL database locally, on the macOS you can download PostgreSQL [here](https://www.postgresql.org/download/macosx/)
+ 
+ - Ensure you have IntelliJ installed 
+
 # How to run the server
 
 In order to run the server, you must tell the running JVM where to look for the CPLEX binaries. CPLEX is the native
