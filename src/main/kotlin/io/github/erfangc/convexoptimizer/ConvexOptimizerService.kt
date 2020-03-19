@@ -4,6 +4,8 @@ import ilog.concert.IloNumExpr
 import ilog.concert.IloObjectiveSense
 import ilog.concert.IloRange
 import ilog.cplex.IloCplex
+import io.github.erfangc.analysis.AnalysisRequest
+import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.convexoptimizer.PositionConstraintBuilder.positionConstraints
 import io.github.erfangc.convexoptimizer.PositionVariablesFactory.positionVars
@@ -11,8 +13,6 @@ import io.github.erfangc.convexoptimizer.SolutionParser.parseSolution
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
 import io.github.erfangc.users.UserService
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service
  */
 @Service
 class ConvexOptimizerService(
-        private val marketValueAnalysisService: MarketValueAnalysisService,
+        private val analysisService: AnalysisService,
         private val expectedReturnsService: ExpectedReturnsService,
         covarianceService: CovarianceService,
         private val assetService: AssetService,
@@ -34,7 +34,7 @@ class ConvexOptimizerService(
 
     private val log = LoggerFactory.getLogger(ConvexOptimizerService::class.java)
 
-    private val varianceExpressionBuilder = VarianceExpressionBuilder(covarianceService)
+    private val varianceExpressionBuilder = VarianceExpressionBuilder(covarianceService, analysisService)
 
     /**
      *
@@ -94,34 +94,48 @@ class ConvexOptimizerService(
         return parseSolution(ctx)
     }
 
+    /**
+     * Build position constraints
+     * Reminder that we have two classes of decision variables (by inspection of the optimization context)
+     *
+     * 1 - Asset decision variables, i.e. AAPL + VTI + AGG
+     * 2 - Position decision variables, i.e. (AAPL in Port A), (VTI bought 10 days ago)
+     *
+     * The position decision variables must sum to the asset decision variables to make the problem internally consistent
+     * i.e. the position variables are used to create constraints such that the position decision variables
+     * when summed must equal to their corresponding asset variables. (ex: all position decision variable AAPL in all portfolios must = the asset AAPL variable)
+     */
     private fun portfolioConstraint(ctx: OptimizationContext): List<IloRange> {
         val marketValueAnalyses = ctx.marketValueAnalyses
-        val portfolioConstraints = ctx.portfolioDefinitions.filter { it.withdrawRestricted }.map { portfolioDefinition ->
-            val portfolioId = portfolioDefinition.portfolio.id
-            val portfolioWt = (marketValueAnalyses.netAssetValues[portfolioId]
-                    ?: 0.0) / marketValueAnalyses.netAssetValue
-            val terms = ctx
-                    .positionVars
-                    .filter { it.portfolioId == portfolioId }
-                    .map {
-                        val positionId = it.position.id
-                        val positionWt = marketValueAnalyses.weights[portfolioId]?.get(positionId) ?: 0.0
-                        // original weight
-                        val originalWt = positionWt * portfolioWt
-                        ctx.cplex.sum(originalWt, it.numVar)
-                    }
-                    .toTypedArray()
-            ctx.cplex.eq(
-                    ctx.cplex.sum(terms),
-                    portfolioWt
-            )
-        }
-        return portfolioConstraints
+        return ctx.portfolioDefinitions
+                .filter { it.withdrawRestricted }
+                .map { portfolioDefinition ->
+                    val portfolioId = portfolioDefinition.portfolio.id
+                    val portfolioWt = (marketValueAnalyses.netAssetValues[portfolioId]
+                            ?: 0.0) / marketValueAnalyses.netAssetValue
+                    val weights = marketValueAnalyses.weights[portfolioId]
+                    val terms = ctx
+                            .positionVars
+                            .filter { it.portfolioId == portfolioId }
+                            .map {
+                                val positionId = it.position.id
+                                val positionWt = weights?.get(positionId) ?: 0.0
+                                // original weight
+                                val originalWt = positionWt * portfolioWt
+                                ctx.cplex.sum(originalWt, it.numVar)
+                            }
+                            .toTypedArray()
+                    ctx.cplex.eq(
+                            ctx.cplex.sum(terms),
+                            portfolioWt
+                    )
+                }
     }
 
     private fun marketValueAnalysis(portfolioDefinitions: List<PortfolioDefinition>): MarketValueAnalysis {
-        return marketValueAnalysisService
-                .marketValueAnalysis(MarketValueAnalysisRequest(portfolioDefinitions.map { it.portfolio }))
+        return analysisService
+                .analyze(AnalysisRequest(portfolioDefinitions.map { it.portfolio }))
+                .analysis
                 .marketValueAnalysis
     }
 

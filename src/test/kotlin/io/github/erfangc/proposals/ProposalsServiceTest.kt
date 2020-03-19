@@ -36,21 +36,17 @@ internal class ProposalsServiceTest {
         val userService = UserService()
         val covarianceService = CovarianceService(assetTimeSeriesService)
         val expectedReturnsService = ExpectedReturnsService(assetTimeSeriesService = assetTimeSeriesService, assetService = assetService)
-        val marketValueAnalysisService1 = MarketValueAnalysisService(assetService = assetService)
-        val analysisService1 = AnalysisService(
-                marketValueAnalysisService = marketValueAnalysisService1,
-                expectedReturnsService = expectedReturnsService,
-                covarianceService = covarianceService
-        )
+        val marketValueAnalysisService = MarketValueAnalysisService(assetService = assetService)
+        val analysisService = AnalysisService(marketValueAnalysisService, expectedReturnsService, covarianceService)
+
         val goalsEngineService = GoalsEngineService(
-                analysisService = analysisService1,
+                analysisService = analysisService,
                 expectedReturnsService = expectedReturnsService,
                 userService = userService,
                 covarianceService = covarianceService
         )
-        val marketValueAnalysisService = MarketValueAnalysisService(assetService)
         val convexOptimizerService = ConvexOptimizerService(
-                marketValueAnalysisService = marketValueAnalysisService,
+                analysisService = analysisService,
                 assetService = assetService,
                 covarianceService = covarianceService,
                 userService = userService,
@@ -62,7 +58,6 @@ internal class ProposalsServiceTest {
         } returns emptyList()
         val portfolioService = PortfolioService(userService, jdbcTemplate)
 
-        val analysisService = AnalysisService(marketValueAnalysisService, expectedReturnsService, covarianceService)
         val proposalCrudService = ProposalCrudService(userService, jacksonObjectMapper(), jdbcTemplate)
 
         val svc = ProposalsService(

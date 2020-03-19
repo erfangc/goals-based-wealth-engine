@@ -1,6 +1,7 @@
 package io.github.erfangc.convexoptimizer
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
+import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.assets.AssetTimeSeriesService
 import io.github.erfangc.covariance.CovarianceService
@@ -15,16 +16,18 @@ internal class ConvexOptimizerServiceTest {
     fun optimizePortfolio() {
         val ddb = AmazonDynamoDBClientBuilder.defaultClient()
         val assetService = AssetService(ddb)
-        val marketValueAnalysisService = MarketValueAnalysisService(assetService)
         val assetTimeSeriesService = AssetTimeSeriesService(ddb)
+        val marketValueAnalysisService = MarketValueAnalysisService(assetService)
+        val expectedReturnsService = ExpectedReturnsService(assetTimeSeriesService, assetService)
         val covarianceService = CovarianceService(assetTimeSeriesService)
+        val analysisService = AnalysisService(marketValueAnalysisService, expectedReturnsService, covarianceService)
         val userService = UserService()
 
         val svc = ConvexOptimizerService(
-                marketValueAnalysisService = marketValueAnalysisService,
+                analysisService = analysisService,
                 assetService = assetService,
                 covarianceService = covarianceService,
-                expectedReturnsService = ExpectedReturnsService(assetTimeSeriesService, assetService),
+                expectedReturnsService = expectedReturnsService,
                 userService = userService
         )
 
