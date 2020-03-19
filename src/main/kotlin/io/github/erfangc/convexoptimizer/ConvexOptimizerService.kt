@@ -178,7 +178,7 @@ class ConvexOptimizerService(
         val positionVars = positionVars(
                 portfolios,
                 cplex,
-                userService.getUser().overrides?.whiteList
+                userService.getUser().settings?.whiteList
         )
 
         val marketValueAnalysis = marketValueAnalysis(portfolios)
@@ -208,7 +208,7 @@ class ConvexOptimizerService(
     private fun assetIds(req: OptimizePortfolioRequest): List<String> {
         val holdings = holdingAssetIds(req)
         val user = userService.getUser()
-        val whiteList = user.overrides?.whiteList?.map { it.assetId } ?: emptyList()
+        val whiteList = user.settings?.whiteList?.map { it.assetId } ?: emptyList()
         return (holdings + whiteList + "USD").distinct()
     }
 

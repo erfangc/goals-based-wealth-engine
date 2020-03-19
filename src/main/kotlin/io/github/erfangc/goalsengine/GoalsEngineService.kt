@@ -26,7 +26,7 @@ class GoalsEngineService(
             )
         } else {
             // use an efficient frontier
-            val whiteList = user.overrides?.whiteList ?: emptyList()
+            val whiteList = user.settings?.whiteList ?: emptyList()
             val assetIds = whiteList.map { it.assetId }
             val covariances = covarianceService.computeCovariances(assetIds)
             val expectedReturns = expectedReturns(covariances, assetIds)

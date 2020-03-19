@@ -1,7 +1,6 @@
 package io.github.erfangc.users
 
 import org.springframework.stereotype.Service
-import java.util.*
 
 @Service
 class UserService {
@@ -13,7 +12,7 @@ class UserService {
                 firmName = "Self Employed",
                 firstName = "Erfang",
                 lastName = "Chen",
-                overrides = Overrides(
+                settings = Settings(
                         whiteList = listOf(
                                 WhiteListItem("BND"),
                                 WhiteListItem("BNDX"),

@@ -1,6 +1,6 @@
 package io.github.erfangc.users
 
-data class Overrides(
+data class Settings(
         val whiteList: List<WhiteListItem>,
         val scenarioDefinitions: List<ScenarioDefinition>? = null,
         val modelPortfolioSettings: ModelPortfolioSettings? = null

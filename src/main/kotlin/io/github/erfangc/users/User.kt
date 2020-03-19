@@ -5,7 +5,7 @@ data class User(
         val firstName: String,
         val lastName: String,
         val email: String,
-        val overrides: Overrides? = null,
+        val settings: Settings? = null,
         val address: String? = null,
         val firmName: String? = null
 )
