@@ -3,6 +3,7 @@ package io.github.erfangc.expectedreturns
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.assets.AssetTimeSeriesService
 import io.github.erfangc.util.DateUtils.months
+import io.github.erfangc.util.DateUtils.mostRecentMonthEnd
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
@@ -72,12 +73,15 @@ class ExpectedReturnsService(
      * Compute factor premium looking back arbitrarily long
      */
     private fun factorPremiums(): Map<String, Double> {
-        val stop = now()
+        val stop = mostRecentMonthEnd()
+        // we take 30 years of history to compute factor premiums. long histories are needed
+        // to avoid short-term fluctuations and instabilities
         val months = months(stop.minusYears(30), stop)
         val totals = months
                 .fold(mapOf("market" to 0.0, "smb" to 0.0, "hml" to 0.0)) { acc, date ->
                     mapOf(
-                            "market" to (acc["market"] ?: error("")) + (factorLevels[date]?.get("market")?.value ?: error("")),
+                            "market" to (acc["market"] ?: error("")) + (factorLevels[date]?.get("market")?.value
+                                    ?: error("")),
                             "smb" to (acc["smb"] ?: error("")) + (factorLevels[date]?.get("smb")?.value ?: error("")),
                             "hml" to (acc["hml"] ?: error("")) + (factorLevels[date]?.get("hml")?.value ?: error(""))
                     )
@@ -98,7 +102,7 @@ class ExpectedReturnsService(
         // returns were zero
 
         // set to final date to the most recent month end
-        val lastMonth = now()
+        val lastMonth = mostRecentMonthEnd()
         // this should be the last day of last month
         val start = lastMonth.minusYears(5)
 
@@ -139,7 +143,8 @@ class ExpectedReturnsService(
             if (asset?.assetClass == "Bond") {
                 assetId to (asset.yield?.div(100.0) ?: 0.0)
             } else {
-                val monthlyReturns = monthlySeries[assetId] ?: throw IllegalStateException("cannot find monthly returns for $assetId")
+                val monthlyReturns = monthlySeries[assetId]
+                        ?: throw IllegalStateException("cannot find monthly returns for $assetId")
                 val y = months.map { date -> monthlyReturns[date.toString()]?.value ?: 0.0 }.toDoubleArray()
                 val ols = OLSMultipleLinearRegression()
                 ols.newSampleData(y, x)
@@ -149,12 +154,6 @@ class ExpectedReturnsService(
                 assetId to mu * 12
             }
         }.toMap() + ("USD" to 0.0)
-    }
-
-    private fun now(): LocalDate {
-        val now = LocalDate.now()
-        val lastMonth = now.minusMonths(1)
-        return lastMonth.minusDays(lastMonth.dayOfMonth.toLong() - 1)
     }
 
 }

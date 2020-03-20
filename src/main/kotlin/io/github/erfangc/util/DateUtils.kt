@@ -13,4 +13,15 @@ object DateUtils {
         }
         return months
     }
+
+    /**
+     * Utility method that universally determines the most recent month end
+     *
+     * If data is not live, we can hard code the most recent date into this method
+     */
+    fun mostRecentMonthEnd(): LocalDate {
+        val now = LocalDate.now()
+        val lastMonth = now.minusMonths(1)
+        return lastMonth.minusDays(lastMonth.dayOfMonth.toLong() - 1)
+    }
 }
