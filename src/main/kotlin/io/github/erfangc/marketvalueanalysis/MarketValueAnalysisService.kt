@@ -46,6 +46,7 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
             }.toMap()
         }.toMap()
 
+        // compute a map of positions to their weight in their respective portfolios
         val weights = portfolios.map { portfolio ->
             portfolio.id to portfolio.positions.map { position ->
                 val nav = netAssetValues[portfolio.id] ?: 0.0
@@ -59,6 +60,8 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
         val buckets = portfolios
                 .flatMap { portfolio ->
                     val portfolioId = portfolio.id
+                    val portfolioNav = netAssetValues[portfolioId] ?: error("")
+                    val portfolioWeight = portfolioNav / netAssetValue
                     portfolio
                             .positions
                             .map { position ->
@@ -67,7 +70,7 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
                                 val asset = assets[assetId]
                                 val assetClass = asset?.assetClass ?: "Other"
                                 val weight = (weights[portfolioId]?.get(positionId) ?: 0.0)
-                                assetClass to weight
+                                assetClass to weight * portfolioWeight
                             }
                 }
                 .groupBy { it.first }
