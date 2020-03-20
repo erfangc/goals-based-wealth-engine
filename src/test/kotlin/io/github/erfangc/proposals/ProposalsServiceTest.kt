@@ -66,7 +66,8 @@ internal class ProposalsServiceTest {
                 convexOptimizerService = convexOptimizerService,
                 portfolioService = portfolioService,
                 analysisService = analysisService,
-                proposalCrudService = proposalCrudService
+                proposalCrudService = proposalCrudService,
+                userService = userService
         )
 
         val response = svc.generateProposal(

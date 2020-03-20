@@ -2,16 +2,16 @@ package io.github.erfangc.proposals
 
 import io.github.erfangc.analysis.AnalysisRequest
 import io.github.erfangc.analysis.AnalysisService
-import io.github.erfangc.convexoptimizer.ConvexOptimizerService
-import io.github.erfangc.convexoptimizer.Objectives
-import io.github.erfangc.convexoptimizer.OptimizePortfolioRequest
-import io.github.erfangc.convexoptimizer.PortfolioDefinition
+import io.github.erfangc.convexoptimizer.*
 import io.github.erfangc.goalsengine.Cashflow
 import io.github.erfangc.goalsengine.GoalsEngineService
 import io.github.erfangc.goalsengine.GoalsOptimizationRequest
+import io.github.erfangc.goalsengine.GoalsOptimizationResponse
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
+import io.github.erfangc.users.ModelPortfolio
+import io.github.erfangc.users.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
@@ -23,6 +23,7 @@ private const val supportMsg = "only goals based proposal is supported at the mo
 
 @Service
 class ProposalsService(
+        private val userService: UserService,
         private val analysisService: AnalysisService,
         private val proposalCrudService: ProposalCrudService,
         private val goalsEngineService: GoalsEngineService,
@@ -41,50 +42,19 @@ class ProposalsService(
      */
     fun generateProposal(req: GenerateProposalRequest): GenerateProposalResponse {
         // step 1 - run goals based simulation to find risk reward that maximizes chance of success
-        log.info("Running goals engine to figure out the best risk reward for ${req.client.id}")
-        val stopWatch = StopWatch()
-        stopWatch.start()
-        val investmentHorizon = investmentHorizon(req)
-        val cashflows = cashflows(req)
-        val initialWealth = initialInvestment(req)
-        val goal = goal(req)
-        val goalsOutput = goalsEngineService.goalsOptimization(
-                GoalsOptimizationRequest(
-                        initialWealth = initialWealth,
-                        cashflows = cashflows,
-                        investmentHorizon = investmentHorizon,
-                        goal = goal
-                )
-        )
-        stopWatch.stop()
-        log.info("Finished goals engine to figure out the best risk reward for ${req.client.id}," +
-                " probabilityOfSuccess=${goalsOutput.probabilityOfSuccess}, " +
-                " expectedReturn=${goalsOutput.expectedReturn}, " +
-                " volatility=${goalsOutput.volatility}, " +
-                " run time: ${stopWatch.lastTaskTimeMillis} ms")
+        val goalsOutput = goalsOptimization(req)
 
-        val expectedReturn = goalsOutput.expectedReturn
         // step 2 - given the target risk reward, use convex optimization to find the actual trades
-        log.info("Running convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}")
-        stopWatch.start()
-        val optimizePortfolioResponse = convexOptimizerService.optimizePortfolio(
-                OptimizePortfolioRequest(
-                        newInvestments = req.newInvestment,
-                        objectives = Objectives(expectedReturn = expectedReturn),
-                        portfolios = portfolioDefinitions(req)
-                )
-        )
-        stopWatch.stop()
-        log.info("Finished convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
+        val optimizationResponse = convexOptimization(goalsOutput, req)
 
         val portfolios = portfolioDefinitions(req)?.map { it.portfolio } ?: emptyList()
-        val proposedAnalysisResponse = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.proposedPortfolios))
-        val originalAnalysisResponse = analysisService.analyze(AnalysisRequest(optimizePortfolioResponse.originalPortfolios))
+        val proposedAnalysisResponse = analysisService.analyze(AnalysisRequest(optimizationResponse.proposedPortfolios))
+        val originalAnalysisResponse = analysisService.analyze(AnalysisRequest(optimizationResponse.originalPortfolios))
 
         val proposal = Proposal(
                 id = UUID.randomUUID().toString(),
                 portfolios = portfolios,
-                proposedOrders = optimizePortfolioResponse.proposedOrders
+                proposedOrders = optimizationResponse.proposedOrders
         )
 
         if (req.save) {
@@ -94,7 +64,7 @@ class ProposalsService(
         val pAnalysis = proposedAnalysisResponse.analysis
         return GenerateProposalResponse(
                 proposal = proposal,
-                proposedPortfolios = optimizePortfolioResponse.proposedPortfolios,
+                proposedPortfolios = optimizationResponse.proposedPortfolios,
                 analyses = Analyses(
                         expectedReturn = ExpectedReturn(
                                 original = oAnalysis.expectedReturn,
@@ -129,14 +99,62 @@ class ProposalsService(
         )
     }
 
+    private fun goalsOptimization(req: GenerateProposalRequest): GoalsOptimizationResponse {
+        val stopWatch = StopWatch()
+        log.info("Running goals engine to figure out the best risk reward for ${req.client.id}")
+
+        stopWatch.start()
+        val goalsOutput = goalsEngineService.goalsOptimization(
+                GoalsOptimizationRequest(
+                        modelPortfolios = modelPortfolios(),
+                        initialWealth = initialInvestment(req),
+                        cashflows = cashflows(req),
+                        investmentHorizon = investmentHorizon(req),
+                        goal = goal(req)
+                )
+        )
+        stopWatch.stop()
+
+        log.info("Finished goals engine to figure out the best risk reward for ${req.client.id}," +
+                " probabilityOfSuccess=${goalsOutput.probabilityOfSuccess}, " +
+                " expectedReturn=${goalsOutput.expectedReturn}, " +
+                " volatility=${goalsOutput.volatility}, " +
+                " run time: ${stopWatch.lastTaskTimeMillis} ms")
+
+        return goalsOutput
+    }
+
+    private fun modelPortfolios(): List<ModelPortfolio>? {
+        val modelPortfolioSettings = userService.getUser().settings?.modelPortfolioSettings
+        return if (modelPortfolioSettings?.enabled == true) modelPortfolioSettings.modelPortfolios else null
+    }
+
+    private fun convexOptimization(goalsOutput: GoalsOptimizationResponse, req: GenerateProposalRequest): OptimizePortfolioResponse {
+        val stopWatch = StopWatch()
+        val expectedReturn = goalsOutput.expectedReturn
+        log.info("Running convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}")
+        stopWatch.start()
+        val optimizePortfolioResponse = convexOptimizerService.optimizePortfolio(
+                OptimizePortfolioRequest(
+                        modelPortfolio = goalsOutput.modelPortfolio,
+                        newInvestments = req.newInvestment,
+                        objectives = Objectives(expectedReturn = expectedReturn),
+                        portfolios = portfolioDefinitions(req)
+                )
+        )
+        stopWatch.stop()
+        log.info("Finished convex optimization to target expected return" +
+                " ${expectedReturn * 100}% ${req.client.id}, run time: ${stopWatch.lastTaskTimeMillis} ms")
+        return optimizePortfolioResponse
+    }
+
     /**
      * Grab existing portfolios
      */
     private fun portfolioDefinitions(req: GenerateProposalRequest) =
             portfolioService
                     .getForClientId(req.client.id)
-                    ?.map {
-                        portfolio ->
+                    ?.map { portfolio ->
                         val withdrawRestricted = listOf("ira", "401k").contains(portfolio.source?.subType)
                         PortfolioDefinition(portfolio = portfolio, withdrawRestricted = withdrawRestricted)
                     }

@@ -4,6 +4,7 @@ import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.covariance.ComputeCovariancesResponse
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
+import io.github.erfangc.users.ModelPortfolio
 import io.github.erfangc.users.ModelPortfolioSettings
 import io.github.erfangc.users.UserService
 import org.springframework.stereotype.Service
@@ -17,9 +18,38 @@ class GoalsEngineService(
 ) {
 
     fun goalsOptimization(req: GoalsOptimizationRequest): GoalsOptimizationResponse {
+        val portfolioChoices = portfolioChoices(req)
+        val goalsEngine = GoalsEngine(
+                portfolioChoices = portfolioChoices,
+                goal = req.goal,
+                initialWealth = req.initialWealth,
+                investmentHorizon = req.investmentHorizon,
+                cashflows = req.cashflows
+        )
+
+        val optimalRiskReward = goalsEngine.findOptimalRiskReward()
+
+        return GoalsOptimizationResponse(
+                expectedReturn = optimalRiskReward.expectedReturn,
+                volatility = optimalRiskReward.volatility,
+                probabilityOfSuccess = optimalRiskReward.probabilityOfSuccess,
+                modelPortfolio = resolveModelPortfolio(optimalRiskReward, portfolioChoices)
+        )
+    }
+
+    private fun resolveModelPortfolio(optimalRiskReward: OptimalRiskReward,
+                                      portfolioChoices: PortfolioChoices): ModelPortfolio? {
+        return if (portfolioChoices is ModelPortfolioChoices) {
+            portfolioChoices.getPortfolio(optimalRiskReward.expectedReturn)
+        } else {
+            null
+        }
+    }
+
+    private fun portfolioChoices(req: GoalsOptimizationRequest): PortfolioChoices {
         val user = userService.getUser()
 
-        val portfolioChoices = if (req.modelPortfolios != null) {
+        return if (req.modelPortfolios != null) {
             ModelPortfolioChoices(
                     analysisService = analysisService,
                     modelPortfolioSettings = ModelPortfolioSettings(true, req.modelPortfolios)
@@ -35,23 +65,6 @@ class GoalsEngineService(
                     expectedReturns = expectedReturns
             )
         }
-
-        // TODO if model portfolios is defined, we should use the model portfolio as the portfolioChoices instead of an efficient frontier
-        val goalsEngine = GoalsEngine(
-                portfolioChoices = portfolioChoices,
-                goal = req.goal,
-                initialWealth = req.initialWealth,
-                investmentHorizon = req.investmentHorizon,
-                cashflows = req.cashflows
-        )
-
-        val optimalRiskReward = goalsEngine.findOptimalRiskReward()
-
-        return GoalsOptimizationResponse(
-                expectedReturn = optimalRiskReward.expectedReturn,
-                volatility = optimalRiskReward.volatility,
-                probabilityOfSuccess = optimalRiskReward.probabilityOfSuccess
-        )
     }
 
     private fun expectedReturns(covariances: ComputeCovariancesResponse, assetIds: List<String>): DoubleArray {
