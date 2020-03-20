@@ -7,6 +7,17 @@ object PositionConstraintBuilder {
 
     private val log = LoggerFactory.getLogger(PositionConstraintBuilder::class.java)
 
+    /**
+     * Build position constraints
+     * Reminder that we have two classes of decision variables (by inspection of the optimization context)
+     *
+     * 1 - Asset decision variables, i.e. AAPL + VTI + AGG
+     * 2 - Position decision variables, i.e. (AAPL in Port A), (VTI bought 10 days ago)
+     *
+     * The position decision variables must sum to the asset decision variables to make the problem internally consistent
+     * i.e. the position variables are used to create constraints such that the position decision variables
+     * when summed must equal to their corresponding asset variables. (ex: all position decision variable AAPL in all portfolios must = the asset AAPL variable)
+     */
     fun positionConstraints(ctx: OptimizationContext): List<IloConstraint> {
         val cplex = ctx.cplex
         val analyses = ctx.marketValueAnalyses
@@ -34,7 +45,7 @@ object PositionConstraintBuilder {
                         // aggregateNAV to transact
                         cplex.sum(positionVar.numVar, originalWtToAgg)
                     }.toTypedArray()
-                    cplex.eq(cplex.sum(terms), assetVar)
+                    cplex.eq(cplex.sum(terms), assetVar, "weight of all positions in $assetId must be the weight of $assetId")
                 }
         log.info("Created ${positionMustSumToAssetConstraints.size} position constraints across " +
                 "${ctx.assetIds.size} assets and " +

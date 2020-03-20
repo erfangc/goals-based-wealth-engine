@@ -59,6 +59,7 @@ class ProposalsService(
         stopWatch.stop()
         log.info("Finished goals engine to figure out the best risk reward for ${req.client.id}," +
                 " probabilityOfSuccess=${goalsOutput.probabilityOfSuccess}, " +
+                " expectedReturn=${goalsOutput.expectedReturn}, " +
                 " volatility=${goalsOutput.volatility}, " +
                 " run time: ${stopWatch.lastTaskTimeMillis} ms")
 

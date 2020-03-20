@@ -70,10 +70,10 @@ class ConvexOptimizerService(
         cplex.addObjective(IloObjectiveSense.Minimize, varianceExpressionBuilder.varianceExpr(ctx))
 
         // total weight must be 100%
-        cplex.add(cplex.eq(1.0, cplex.sum(ctx.assetVars.values.toTypedArray())))
+        cplex.add(cplex.eq(1.0, cplex.sum(ctx.assetVars.values.toTypedArray()), "weight of all assets must equal 1.0"))
 
         // the resulting portfolio must target the level of return
-        cplex.add(cplex.ge(returnExpr(ctx), req.objectives.expectedReturn))
+        cplex.add(cplex.ge(returnExpr(ctx), req.objectives.expectedReturn, "expected return must equal ${req.objectives.expectedReturn}"))
 
         // position level restrictions
         positionConstraints(ctx).forEach { constraint ->
@@ -94,25 +94,15 @@ class ConvexOptimizerService(
         return parseSolution(ctx)
     }
 
-    /**
-     * Build position constraints
-     * Reminder that we have two classes of decision variables (by inspection of the optimization context)
-     *
-     * 1 - Asset decision variables, i.e. AAPL + VTI + AGG
-     * 2 - Position decision variables, i.e. (AAPL in Port A), (VTI bought 10 days ago)
-     *
-     * The position decision variables must sum to the asset decision variables to make the problem internally consistent
-     * i.e. the position variables are used to create constraints such that the position decision variables
-     * when summed must equal to their corresponding asset variables. (ex: all position decision variable AAPL in all portfolios must = the asset AAPL variable)
-     */
     private fun portfolioConstraint(ctx: OptimizationContext): List<IloRange> {
         val marketValueAnalyses = ctx.marketValueAnalyses
+        val nav = marketValueAnalyses.netAssetValues
+        val aggNav = marketValueAnalyses.netAssetValue
         return ctx.portfolioDefinitions
                 .filter { it.withdrawRestricted }
                 .map { portfolioDefinition ->
                     val portfolioId = portfolioDefinition.portfolio.id
-                    val portfolioWt = (marketValueAnalyses.netAssetValues[portfolioId]
-                            ?: 0.0) / marketValueAnalyses.netAssetValue
+                    val portfolioWt = (nav[portfolioId] ?: 0.0) / aggNav
                     val weights = marketValueAnalyses.weights[portfolioId]
                     val terms = ctx
                             .positionVars
