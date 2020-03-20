@@ -14,12 +14,13 @@ class UserService {
                 lastName = "Chen",
                 settings = Settings(
                         whiteList = listOf(
-                                WhiteListItem("BND"),
+                                WhiteListItem("AGG"),
                                 WhiteListItem("BNDX"),
-                                WhiteListItem("VTI"),
-                                WhiteListItem("VEA"),
-                                WhiteListItem("VWO"),
-                                WhiteListItem("VXF")
+                                WhiteListItem("VTV"),
+                                WhiteListItem("VOE"),
+                                WhiteListItem("VBR"),
+                                WhiteListItem("MUB"),
+                                WhiteListItem("EMB")
                         )
                 )
         )
