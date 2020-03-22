@@ -5,6 +5,8 @@ import java.time.LocalDate
 data class Client(
         val id: String,
         val goals: Goals? = null,
+        val modelPortfolioId: String? = null,
+        val autoAssignModelPortfolio: Boolean? = null,
         val firstName: String,
         val lastName: String,
         val email: String? = null,
