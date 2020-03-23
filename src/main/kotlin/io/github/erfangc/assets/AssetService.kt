@@ -10,17 +10,17 @@ import org.springframework.stereotype.Service
 class AssetService(private val ddb: AmazonDynamoDB) {
 
     fun getAssets(assetIds: List<String>): List<Asset> {
-        val assets = assetIds
+        // TODO figure out which assets were missing and populate accordingly
+        return assetIds
+                .distinct()
                 .chunked(25)
                 .flatMap { chunk ->
                     val tableName = "assets"
                     val attributeValues = KeysAndAttributes()
-                            .withKeys(chunk.map { assetId -> mapOf("id" to AttributeValue(assetId)) })
+                            .withKeys(chunk.map<String, Map<String, AttributeValue>> { assetId -> mapOf("id" to AttributeValue(assetId)) })
                     val responses = ddb.batchGetItem(mapOf(tableName to attributeValues)).responses
                     responses[tableName]?.map { item -> fromItem<Asset>(item) } ?: emptyList()
                 }
-        // TODO figure out which assets were missing and populate accordingly
-        return assets
     }
 
     fun getAssetByCUSIP(cusip: String): Asset? {
