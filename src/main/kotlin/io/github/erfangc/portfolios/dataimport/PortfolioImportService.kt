@@ -2,10 +2,8 @@ package io.github.erfangc.portfolios.dataimport
 
 import io.github.erfangc.assets.Asset
 import io.github.erfangc.assets.AssetService
-import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
 import org.springframework.stereotype.Service
-import java.util.*
 
 @Service
 class PortfolioImportService(private val assetService: AssetService) {
@@ -18,7 +16,7 @@ class PortfolioImportService(private val assetService: AssetService) {
      * Takes in a set of parsed pairs of id -> amount, parse them into a full portfolio
      * For now we just support resolution by ticker
      */
-    fun resolvePortfolio(req: ResolvePortfolioRequest): ResolvePortfolioResponse {
+    fun importPortfolio(req: ImportPortfolioRequest): ImportPortfolioResponse {
         val lines = req.clipboard.split("\n")
         val delimiters = req.delimiter
 
@@ -47,46 +45,41 @@ class PortfolioImportService(private val assetService: AssetService) {
             val part2 = parts[1]
             val asset = resolveAssetId(headers[0], part1)
             if (asset == null) {
-                ParsedRow(error = ResolvePortfolioError(message = "Unable to find identifier $part1", unresolvedIdentifier = part1, index = index))
+                PositionRow(error = ResolvePortfolioError(message = "Unable to find identifier $part1", unresolvedIdentifier = part1, index = index))
             } else {
                 if (headers[1] == "weight") {
                     // process weight
                     val weight = part2.toDoubleOrNull()
                     if (weight == null) {
-                        ParsedRow(error = ResolvePortfolioError(message = "Unable to read weight for $part1", unresolvedIdentifier = part1, index = index))
+                        PositionRow(error = ResolvePortfolioError(message = "Unable to read weight for $part1", unresolvedIdentifier = part1, index = index))
                     } else {
-                        ParsedRow(asset = asset, position = Position(quantity = quantity(asset, fixedNav * weight), assetId = asset.id))
+                        PositionRow(asset = asset, position = Position(quantity = quantity(asset, fixedNav * weight), assetId = asset.id))
                     }
                 } else if (listOf("quantity", "amount", "unit").contains(headers[1]?.toLowerCase())) {
                     // process the unit
                     val quantity = part2.toDoubleOrNull()
                     if (quantity == null) {
-                        ParsedRow(error = ResolvePortfolioError(message = "Unable to read the amount for $part1", index = index))
+                        PositionRow(error = ResolvePortfolioError(message = "Unable to read the amount for $part1", index = index))
                     } else {
-                        ParsedRow(asset = asset, position = Position(quantity = quantity, assetId = asset.id))
+                        PositionRow(asset = asset, position = Position(quantity = quantity, assetId = asset.id))
                     }
                 } else {
                     // assume the amounts are in market value
                     val marketValue = part2.toDoubleOrNull()
                     if (marketValue == null) {
-                        ParsedRow(error = ResolvePortfolioError(message = "Unable to read the market value for $part1", index = index))
+                        PositionRow(error = ResolvePortfolioError(message = "Unable to read the market value for $part1", index = index))
                     } else {
-                        ParsedRow(asset = asset, position = Position(quantity = quantity(asset, marketValue), assetId = asset.id))
+                        PositionRow(asset = asset, position = Position(quantity = quantity(asset, marketValue), assetId = asset.id))
                     }
                 }
             }
         }
 
         val assets = parsedRows.mapNotNull { it.asset?.let { asset -> asset.id to asset } }.toMap()
-        val errors = parsedRows.mapNotNull { it.error }
-        val positions = parsedRows.mapNotNull { it.position }
 
-        val portfolioId = req.portfolioId ?: UUID.randomUUID().toString()
-        return ResolvePortfolioResponse(
-                parsedRows = parsedRows,
-                portfolio = Portfolio(positions = positions, id = portfolioId),
+        return ImportPortfolioResponse(
+                positionRows = parsedRows,
                 assets = assets,
-                errors = errors,
                 requiresNavForScaling = headers[1] == "weight"
         )
 

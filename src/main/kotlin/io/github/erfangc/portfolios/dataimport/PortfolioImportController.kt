@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/apis/portfolios/_import")
 class PortfolioImportController(private val portfolioImportService: PortfolioImportService) {
     @PostMapping
-    fun resolvePortfolio(@RequestBody req: ResolvePortfolioRequest): ResolvePortfolioResponse {
-        return portfolioImportService.resolvePortfolio(req)
+    fun resolvePortfolio(@RequestBody req: ImportPortfolioRequest): ImportPortfolioResponse {
+        return portfolioImportService.importPortfolio(req)
     }
 }

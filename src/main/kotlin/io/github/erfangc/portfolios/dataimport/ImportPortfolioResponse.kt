@@ -1,21 +1,12 @@
 package io.github.erfangc.portfolios.dataimport
 
 import io.github.erfangc.assets.Asset
-import io.github.erfangc.portfolios.Portfolio
 
-data class ResolvePortfolioResponse(
+data class ImportPortfolioResponse(
         /**
          * The parsed results
          */
-        val parsedRows: List<ParsedRow>,
-        /**
-         * The parsed portfolio. If only weights are provided, the NAV is assumed 1_000_000
-         */
-        val portfolio: Portfolio,
-        /**
-         * Any errors encountered during parsing the portfolio
-         */
-        val errors: List<ResolvePortfolioError>,
+        val positionRows: List<PositionRow>,
         /**
          * A map of the resolved assets
          */
