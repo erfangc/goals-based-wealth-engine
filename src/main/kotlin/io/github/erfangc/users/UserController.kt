@@ -13,4 +13,16 @@ class UserController(private val userService: UserService) {
     fun saveUser(@PathVariable id: String, @RequestBody user: User): User {
         return userService.saveUser(user.copy(id = id))
     }
+    @PostMapping("_sign-up")
+    fun signUp() {
+        TODO()
+    }
+    @PostMapping("_sign-in")
+    fun signIn() {
+        TODO()
+    }
+    @PostMapping("_sign-out")
+    fun signOut() {
+        TODO()
+    }
 }
