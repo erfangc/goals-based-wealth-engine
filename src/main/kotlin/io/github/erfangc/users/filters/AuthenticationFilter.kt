@@ -1,6 +1,7 @@
 package io.github.erfangc.users.filters
 
 import io.github.erfangc.users.AccessTokenProvider.parseAccessToken
+import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import javax.servlet.Filter
 import javax.servlet.FilterChain
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 @Component
+@Order(1)
 class AuthenticationFilter : Filter {
 
     /**
@@ -19,6 +21,10 @@ class AuthenticationFilter : Filter {
                           response: ServletResponse,
                           filterChain: FilterChain) {
         if (request is HttpServletRequest && response is HttpServletResponse) {
+            if (request.method == "OPTIONS") {
+                filterChain.doFilter(request, response)
+                return
+            }
             val path = request.servletPath
             if (listOf("/apis/users/_sign-in", "/apis/users/_sign-up").contains(path)) {
                 // sign in and sign-up are allowed unauthenticated
