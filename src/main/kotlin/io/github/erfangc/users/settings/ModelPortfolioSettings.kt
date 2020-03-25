@@ -1,6 +1,5 @@
-package io.github.erfangc.users
+package io.github.erfangc.users.settings
 
 data class ModelPortfolioSettings(
-        val enabled: Boolean,
         val modelPortfolios: List<ModelPortfolio>
 )

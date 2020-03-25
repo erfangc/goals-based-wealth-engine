@@ -10,7 +10,7 @@ import io.github.erfangc.goalsengine.GoalsOptimizationResponse
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
-import io.github.erfangc.users.ModelPortfolio
+import io.github.erfangc.users.settings.ModelPortfolio
 import io.github.erfangc.users.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -125,8 +125,8 @@ class ProposalsService(
     }
 
     private fun modelPortfolios(): List<ModelPortfolio>? {
-        val modelPortfolioSettings = userService.getUser().settings?.modelPortfolioSettings
-        return if (modelPortfolioSettings?.enabled == true) modelPortfolioSettings.modelPortfolios else null
+        // TODO figure out model portfolios from client object
+        return null
     }
 
     private fun convexOptimization(goalsOutput: GoalsOptimizationResponse, req: GenerateProposalRequest): OptimizePortfolioResponse {

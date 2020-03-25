@@ -14,7 +14,7 @@ class ClientService(
         private val userService: UserService
 ) {
     fun getClients(): List<Client> {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         return jdbcTemplate
                 .queryForList("SELECT * FROM clients WHERE userId = :userId", mapOf("userId" to userId))
                 .map {
@@ -23,7 +23,7 @@ class ClientService(
     }
 
     fun getClient(id: String): Client? {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         try {
             val row = jdbcTemplate.queryForMap("SELECT * FROM clients WHERE id = :id AND userId = :userId", mapOf("id" to id, "userId" to userId))
             return objectMapper.readValue(row["json"].toString())
@@ -33,7 +33,7 @@ class ClientService(
     }
 
     fun saveClient(client: Client): Client {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         val json = objectMapper.writeValueAsString(client)
         val updateSql = """
             INSERT INTO clients (id, userId, json)
@@ -48,7 +48,7 @@ class ClientService(
     }
 
     fun deleteClient(id: String): Client? {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         val client = getClient(id)
         jdbcTemplate.update(
                 "DELETE FROM clients WHERE id = :id AND userId = :userId",

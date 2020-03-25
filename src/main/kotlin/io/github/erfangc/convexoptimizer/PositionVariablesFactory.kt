@@ -1,9 +1,8 @@
 package io.github.erfangc.convexoptimizer
 
 import ilog.cplex.IloCplex
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 import io.github.erfangc.portfolios.Position
-import io.github.erfangc.users.WhiteListItem
+import io.github.erfangc.users.settings.WhiteListItem
 import java.util.*
 
 object PositionVariablesFactory {

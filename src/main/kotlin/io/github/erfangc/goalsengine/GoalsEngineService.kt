@@ -4,8 +4,8 @@ import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.covariance.ComputeCovariancesResponse
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
-import io.github.erfangc.users.ModelPortfolio
-import io.github.erfangc.users.ModelPortfolioSettings
+import io.github.erfangc.users.settings.ModelPortfolio
+import io.github.erfangc.users.settings.ModelPortfolioSettings
 import io.github.erfangc.users.UserService
 import org.springframework.stereotype.Service
 
@@ -47,12 +47,12 @@ class GoalsEngineService(
     }
 
     private fun portfolioChoices(req: GoalsOptimizationRequest): PortfolioChoices {
-        val user = userService.getUser()
+        val user = userService.currentUser()
 
         return if (req.modelPortfolios != null) {
             ModelPortfolioChoices(
                     analysisService = analysisService,
-                    modelPortfolioSettings = ModelPortfolioSettings(true, req.modelPortfolios)
+                    modelPortfolioSettings = ModelPortfolioSettings(req.modelPortfolios)
             )
         } else {
             // use an efficient frontier

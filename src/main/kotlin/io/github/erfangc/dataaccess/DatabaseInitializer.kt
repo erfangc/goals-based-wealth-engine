@@ -11,7 +11,7 @@ class DatabaseInitializer(private val jdbcTemplate: JdbcTemplate) {
 
     init {
         createTable("clients")
-        createTable("users")
+        createUsersTable()
         createPortfoliosTable()
         createProposalsTable()
     }
@@ -52,6 +52,18 @@ class DatabaseInitializer(private val jdbcTemplate: JdbcTemplate) {
         """.trimIndent())
     }
 
+    private fun createUsersTable() {
+        log.info("Attempting to create the users table if it does not exist")
+        //language=PostgreSQL
+        jdbcTemplate.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id varchar not null,
+                password varchar not null,
+                json json,
+                PRIMARY KEY (id)
+            )
+        """.trimIndent())
+    }
     private fun createTable(name: String) {
         log.info("Attempting to create the $name table if it does not exist")
         //language=PostgreSQL

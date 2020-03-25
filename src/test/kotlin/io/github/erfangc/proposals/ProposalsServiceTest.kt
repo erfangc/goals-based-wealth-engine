@@ -14,6 +14,7 @@ import io.github.erfangc.goalsengine.GoalsEngineService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
 import io.github.erfangc.users.UserService
+import io.github.erfangc.util.DynamoDBUtil.objectMapper
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -33,7 +34,7 @@ internal class ProposalsServiceTest {
         val ddb = AmazonDynamoDBClientBuilder.defaultClient()
         val assetService = AssetService(ddb)
         val assetTimeSeriesService = AssetTimeSeriesService(ddb)
-        val userService = UserService()
+        val userService = UserService(jdbcTemplate = mockk(), objectMapper = objectMapper)
         val covarianceService = CovarianceService(assetTimeSeriesService)
         val expectedReturnsService = ExpectedReturnsService(assetTimeSeriesService = assetTimeSeriesService, assetService = assetService)
         val marketValueAnalysisService = MarketValueAnalysisService(assetService = assetService)

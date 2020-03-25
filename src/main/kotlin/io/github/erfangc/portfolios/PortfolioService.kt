@@ -13,7 +13,7 @@ class PortfolioService(private val userService: UserService,
     private val om = jacksonObjectMapper()
 
     fun getForClientId(clientId: String): List<Portfolio>? {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         return jdbcTemplate.queryForList(
                 "SELECT * FROM portfolios WHERE userId = :userId AND clientId = :clientId",
                 mapOf("clientId" to clientId, "userId" to userId)
@@ -23,13 +23,13 @@ class PortfolioService(private val userService: UserService,
     }
 
     fun getPortfolio(id: String): Portfolio? {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         val row = jdbcTemplate.queryForMap("SELECT * FROM portfolios WHERE id = :id AND userId = :userId", mapOf("id" to id, "userId" to userId))
         return om.readValue(row["json"].toString())
     }
 
     fun savePortfolio(portfolio: Portfolio): Portfolio {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         val clientId = portfolio.clientId
         val json = om.writeValueAsString(portfolio)
         val updateSql = """
@@ -53,7 +53,7 @@ class PortfolioService(private val userService: UserService,
     }
 
     fun deletePortfolio(id: String): Portfolio? {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         val client = getPortfolio(id)
         jdbcTemplate.update(
                 "DELETE FROM portfolios WHERE id = :id AND userId = :userId",

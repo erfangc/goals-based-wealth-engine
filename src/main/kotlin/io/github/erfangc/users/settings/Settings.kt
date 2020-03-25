@@ -1,4 +1,4 @@
-package io.github.erfangc.users
+package io.github.erfangc.users.settings
 
 import io.github.erfangc.scenarios.ScenarioDefinition
 

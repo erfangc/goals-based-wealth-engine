@@ -15,13 +15,13 @@ class ProposalCrudService(private val userService: UserService,
     private val log = LoggerFactory.getLogger(ProposalCrudService::class.java)
 
     fun getClient(id: String): Proposal? {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         val row = jdbcTemplate.queryForMap("SELECT * FROM proposals WHERE id = :id AND userId = :userId", mapOf("id" to id, "userId" to userId))
         return objectMapper.readValue(row["json"].toString())
     }
 
     fun saveProposal(proposal: Proposal): Proposal {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         val clientId = proposal.clientId
         log.info("Saving proposal ${proposal.id} for client ${proposal.clientId}")
         val json = objectMapper.writeValueAsString(proposal)
@@ -47,7 +47,7 @@ class ProposalCrudService(private val userService: UserService,
     }
 
     fun deleteProposal(id: String): Proposal? {
-        val userId = userService.getUser().id
+        val userId = userService.currentUser().id
         val client = getClient(id)
         jdbcTemplate.update(
                 "DELETE FROM proposals WHERE id = :id AND userId = :userId",

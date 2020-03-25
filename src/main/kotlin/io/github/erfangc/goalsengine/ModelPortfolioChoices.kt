@@ -2,8 +2,8 @@ package io.github.erfangc.goalsengine
 
 import io.github.erfangc.analysis.AnalysisRequest
 import io.github.erfangc.analysis.AnalysisService
-import io.github.erfangc.users.ModelPortfolio
-import io.github.erfangc.users.ModelPortfolioSettings
+import io.github.erfangc.users.settings.ModelPortfolio
+import io.github.erfangc.users.settings.ModelPortfolioSettings
 
 /**
  * This [PortfolioChoices] implementation works to produce
