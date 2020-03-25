@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.Position
-import io.github.erfangc.users.AccessTokenProvider.signJwtFor
+import io.github.erfangc.users.AccessTokenProvider.signAccessTokenFor
 import io.github.erfangc.users.settings.ModelPortfolio
 import io.github.erfangc.users.settings.ModelPortfolioSettings
 import io.github.erfangc.users.settings.Settings
@@ -63,7 +63,19 @@ class UserService(private val jdbcTemplate: NamedParameterJdbcTemplate,
     }
 
     fun saveUser(user: User): User {
-        TODO()
+        val json = objectMapper.writeValueAsString(user)
+        val updateSql = """
+            UPDATE users
+            SET
+                json = CAST(:json AS json)
+            WHERE
+                id = :id
+        """.trimIndent()
+        jdbcTemplate.update(
+                updateSql,
+                mapOf("id" to user.id, "json" to json)
+        )
+        return user
     }
 
     fun getUser(id: String): User {
@@ -79,7 +91,7 @@ class UserService(private val jdbcTemplate: NamedParameterJdbcTemplate,
             val password = row["password"].toString()
             if (BCrypt.checkpw(candidate, password)) {
                 val user = getUser(req.email)
-                return SignInResponse(accessToken = signJwtFor(user))
+                return SignInResponse(accessToken = signAccessTokenFor(user))
             } else {
                 throw RuntimeException("The credentials you provided do not match our records")
             }

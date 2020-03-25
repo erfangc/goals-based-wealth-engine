@@ -1,10 +1,14 @@
 package io.github.erfangc.users
 
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.Jws
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.slf4j.LoggerFactory
+import java.lang.Exception
+import java.lang.RuntimeException
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -22,7 +26,7 @@ object AccessTokenProvider {
         Keys.secretKeyFor(SignatureAlgorithm.HS256)
     }
 
-    fun signJwtFor(user: User): String {
+    fun signAccessTokenFor(user: User): String {
         val now = Instant.now()
         val issuer = "www.wealth-engine.com"
         return Jwts
@@ -37,4 +41,19 @@ object AccessTokenProvider {
                 .compact()
     }
 
+    fun parseAccessToken(accessToken: String): Jws<Claims> {
+        val jws = try {
+            Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(accessToken)
+        } catch (e: Exception) {
+            throw RuntimeException("Unable to validate the access token")
+        }
+        if (jws.body.expiration.before(Date.from(Instant.now()))) {
+            throw RuntimeException("Access token expired")
+        } else {
+            return jws
+        }
+    }
 }
