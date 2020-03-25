@@ -64,6 +64,7 @@ class AuthenticationFilter : Filter {
     private fun respondWith401(response: HttpServletResponse, message: String? = null) {
         response.status = 401
         response.contentType = "application/json"
+        response.addHeader("Access-Control-Allow-Origin", "*")
         response.writer.println("""
             {"message":"${message ?: "Unauthorized"}"}
         """.trimIndent())

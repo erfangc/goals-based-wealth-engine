@@ -97,7 +97,7 @@ class UserService(private val jdbcTemplate: NamedParameterJdbcTemplate,
             }
         } catch (e: Exception) {
             log.error("Unable to sign in the user ${req.email}", e)
-            throw java.lang.RuntimeException("We were unable to sign you in")
+            throw RuntimeException("We were unable to sign you in")
         }
     }
 
