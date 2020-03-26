@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/apis/users")
 class UserController(private val userService: UserService) {
     @GetMapping("current-user")
-    fun user(): User {
+    fun currentUser(): User {
         return userService.currentUser()
     }
 

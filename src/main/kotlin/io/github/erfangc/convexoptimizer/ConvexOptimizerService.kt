@@ -117,7 +117,8 @@ class ConvexOptimizerService(
                             .toTypedArray()
                     ctx.cplex.eq(
                             ctx.cplex.sum(terms),
-                            portfolioWt
+                            portfolioWt,
+                            "${portfolioDefinition.portfolio.name} weight must be $portfolioWt"
                     )
                 }
     }
@@ -177,15 +178,16 @@ class ConvexOptimizerService(
         // each asset is an decision variable
         val assetVars = assetIds.map { assetId -> assetId to cplex.numVar(0.0, 1.0, assetId) }.toMap()
         val expectedReturns = expectedReturnsService.getExpectedReturns(assetIds)
+        val marketValueAnalysis = marketValueAnalysis(portfolios)
 
         // create the actual position variables (this method is a bit ugly, as it accepts many arguments, however it gets the job done)
         val positionVars = positionVars(
                 portfolios,
                 cplex,
+                marketValueAnalysis,
                 userService.currentUser().settings?.whiteList
         )
 
-        val marketValueAnalysis = marketValueAnalysis(portfolios)
 
         // aggregate the NAV of all portfolios so we can find out how much a position
         // is weighted in the broader aggregated portfolio

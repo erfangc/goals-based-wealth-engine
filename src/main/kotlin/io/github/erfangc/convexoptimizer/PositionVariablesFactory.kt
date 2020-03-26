@@ -1,6 +1,7 @@
 package io.github.erfangc.convexoptimizer
 
 import ilog.cplex.IloCplex
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 import io.github.erfangc.portfolios.Position
 import io.github.erfangc.users.settings.WhiteListItem
 import java.util.*
@@ -22,17 +23,22 @@ object PositionVariablesFactory {
      */
     fun positionVars(portfolios: List<PortfolioDefinition>,
                      cplex: IloCplex,
+                     marketValueAnalysis: MarketValueAnalysis,
                      defaultWhiteList: List<WhiteListItem>?): List<PositionVar> {
         return portfolios.flatMap { portfolioDefinition ->
             val portfolio = portfolioDefinition.portfolio
             val portfolioId = portfolio.id
             val existingPositionVars = portfolio.positions.map { position ->
                 val positionId = position.id
+                val weights = marketValueAnalysis.weights[portfolioId] ?: emptyMap()
+                val portfolioWt = marketValueAnalysis.netAssetValues[portfolioId]?.div(marketValueAnalysis.netAssetValue) ?: 0.0
+                val weight = weights[positionId] ?: 0.0
                 PositionVar(
                         id = "$portfolioId#$positionId",
                         portfolioId = portfolioId,
                         position = position,
-                        numVar = cplex.numVar(-1.0, 0.0, "$portfolioId#$positionId")
+                        // we can sell at most how much we own, and cannot buy more
+                        numVar = cplex.numVar(-weight * portfolioWt, 0.0, "$portfolioId#$positionId")
                 )
             }
 
