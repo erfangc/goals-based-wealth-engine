@@ -46,7 +46,7 @@ class UserService(private val jdbcTemplate: NamedParameterJdbcTemplate,
                                                         id = "test1",
                                                         name = "Ultra conservative model portfolio",
                                                         description = "This portfolio is very conservative and uses mostly" +
-                                                                " US bonds with a few international bond ETFs for diversification. The focus" +
+                                                                " US bonds with a few international bond ETFs for diversification. The focus " +
                                                                 "is capital preservation. In other words, targeting to match return equivalent to inflation",
                                                         positions = listOf(
                                                                 Position("AGG", 100.0, "AGG"),
