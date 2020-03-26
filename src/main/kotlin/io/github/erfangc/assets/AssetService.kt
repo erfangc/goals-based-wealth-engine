@@ -3,11 +3,27 @@ package io.github.erfangc.assets
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest
 import io.github.erfangc.util.DynamoDBUtil.fromItem
+import io.github.erfangc.util.DynamoDBUtil.toItem
 import org.springframework.stereotype.Service
+import javax.annotation.PostConstruct
 
 @Service
 class AssetService(private val ddb: AmazonDynamoDB) {
+
+    init {
+        val cash = Asset(
+                id = "USD",
+                description = "Cash USD",
+                name = "Cash USD",
+                price = 1.0,
+                ticker = "USD",
+                assetClass = "Cash",
+                type = "Cash"
+        )
+        ddb.putItem(PutItemRequest("assets", toItem(cash)))
+    }
 
     fun getAssets(assetIds: List<String>): List<Asset> {
         // TODO figure out which assets were missing and populate accordingly
