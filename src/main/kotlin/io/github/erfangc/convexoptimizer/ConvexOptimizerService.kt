@@ -73,7 +73,10 @@ class ConvexOptimizerService(
         cplex.add(cplex.eq(1.0, cplex.sum(ctx.assetVars.values.toTypedArray()), "weight of all assets must equal 1.0"))
 
         // the resulting portfolio must target the level of return
-        cplex.add(cplex.ge(returnExpr(ctx), req.objectives.expectedReturn, "expected return must equal ${req.objectives.expectedReturn}"))
+        // this is not true if a model portfolio is provided (i.e. our goal is to minimize tracking error
+        if (req.modelPortfolio != null) {
+            cplex.add(cplex.ge(returnExpr(ctx), req.objectives.expectedReturn, "expected return must equal ${req.objectives.expectedReturn}"))
+        }
 
         // position level restrictions
         positionConstraints(ctx).forEach { constraint ->
