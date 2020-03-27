@@ -45,17 +45,17 @@ class ProposalsService(
         // if the client has an assigned model portfolio, do not run goals optimization, instead just run a probability
         // analysis
         val (goalsOutput, optimizationResponse) = when {
-            req.client.modelPortfolioId != null -> {
-                // do not run simulation use the probability engine to derive the probability
-                // of reaching the client's goals
-                TODO("run a simple analysis without going through the goals engine")
-            }
-            req.client.autoAssignModelPortfolio == true -> {
-                // automatically choose a model portfolio
-                val goalsOutput = modelPortfoliosBasedGoalsOptimization(req)
-                (goalsOutput to constrainedTrackingErrorOptimization(goalsOutput, req))
-            }
-            else -> {
+            req.client.goals?.approach == "model portfolio" -> {
+                if (req.client.goals.autoAssignModelPortfolio == true) {
+                    // automatically choose a model portfolio
+                    val goalsOutput = modelPortfoliosBasedGoalsOptimization(req)
+                    (goalsOutput to constrainedTrackingErrorOptimization(goalsOutput, req))
+                } else {
+                    // do not run simulation use the probability engine to derive the probability
+                    // of reaching the client's goals
+                    TODO("run a simple analysis without going through the goals engine")
+                }
+            } else -> {
                 // use efficient frontier
                 val goalsOutput = efficientFrontierBasedGoalsOptimization(req)
                 (goalsOutput to constrainedMeanVarianceOptimization(goalsOutput, req))
@@ -127,6 +127,7 @@ class ProposalsService(
 
     private fun modelPortfoliosBasedGoalsOptimization(req: GenerateProposalRequest): ModelPortfolioBasedGoalsOptimizationResponse {
         val stopWatch = StopWatch()
+        stopWatch.start()
         log.info("Running goals engine to figure out the best model portfolio for ${req.client.id}")
         val goalsOutput = goalsEngineService.modelPortfolioBasedGoalsOptimization(
                 ModelPortfolioBasedGoalsOptimizationRequest(
@@ -134,7 +135,7 @@ class ProposalsService(
                         cashflows = cashflows(req),
                         investmentHorizon = investmentHorizon(req),
                         goal = goal(req),
-                        modelPortfolios = userService.currentUser().settings?.modelPortfolioSettings?.modelPortfolios ?: error("the user has not model portfolios defined")
+                        modelPortfolios = userService.currentUser().settings.modelPortfolioSettings.modelPortfolios
                 )
         )
         stopWatch.stop()
@@ -152,8 +153,7 @@ class ProposalsService(
     private fun efficientFrontierBasedGoalsOptimization(req: GenerateProposalRequest): EfficientFrontierBasedGoalsOptimizationResponse {
         val stopWatch = StopWatch()
         log.info("Running goals engine to figure out the best risk reward for ${req.client.id}")
-        val whiteListItems = userService.currentUser().settings?.whiteList
-                ?: error("we cannot find a white list for you")
+        val whiteListItems = userService.currentUser().settings.whiteList
         stopWatch.start()
         val goalsOutput = goalsEngineService.efficientFrontierBasedGoalsOptimization(
                 EfficientFrontierBasedGoalsOptimizationRequest(

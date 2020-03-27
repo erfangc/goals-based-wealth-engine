@@ -7,7 +7,7 @@ data class User(
         val firstName: String,
         val lastName: String,
         val email: String,
-        val settings: Settings? = null,
+        val settings: Settings = Settings(),
         val address: String? = null,
         val firmName: String? = null
 )
