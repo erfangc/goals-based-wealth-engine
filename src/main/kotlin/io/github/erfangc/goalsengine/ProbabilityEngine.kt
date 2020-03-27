@@ -62,7 +62,11 @@ class ProbabilityEngine(
     private val nodes: MutableList<MutableList<Node>> = {
 
         // rhoGrid is the density parameter that controls how sparse and dense the state grid is
-        val rhoGrid = 3.0
+        val rhoGrid = when {
+            investmentHorizon > 30 -> 1.0
+            investmentHorizon > 20 -> 2.0
+            else -> 3.0
+        }
         val increment = sigma / rhoGrid
         log.info("Creating nodes rhoGrid=${rhoGrid} increment=${sigma / rhoGrid} ln(wMin)=${ln(wMin)} ln(wMax)=${ln(wMax)}")
 

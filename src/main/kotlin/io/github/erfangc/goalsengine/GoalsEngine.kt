@@ -17,7 +17,7 @@ import kotlin.math.pow
  * as the probability of reaching the goal
  */
 class GoalsEngine(private val portfolioChoices: PortfolioChoices,
-                  private val cashflows: List<Cashflow>,
+                  cashflows: List<Cashflow>,
                   private val investmentHorizon: Int,
                   private val initialWealth: Double,
                   private val goal: Double) {
@@ -67,7 +67,11 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
     private val nodes: MutableList<MutableList<Node>> = {
 
         // rhoGrid is the density parameter that controls how sparse and dense the state grid is
-        val rhoGrid = 3.0
+        val rhoGrid = when {
+            investmentHorizon > 30 -> 1.0
+            investmentHorizon > 20 -> 2.0
+            else -> 3.0
+        }
         val increment = sigmaMin / rhoGrid
         log.info("Creating nodes rhoGrid=${rhoGrid} increment=${sigmaMin / rhoGrid} ln(wMin)=${ln(wMin)} ln(wMax)=${ln(wMax)}")
 
@@ -127,6 +131,7 @@ class GoalsEngine(private val portfolioChoices: PortfolioChoices,
             throw RuntimeException("initial wealth cannot be zero, either import some portfolios or specify a new investment amount")
         }
         val musToTry = portfolioChoices.mus()
+        log.info("The number of discrete choices: ${musToTry.size}")
 
         //
         // define stopping condition:

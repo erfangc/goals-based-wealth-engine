@@ -21,32 +21,39 @@ class ModelPortfolioChoices(private val analysisService: AnalysisService,
             .map { modelPortfolio -> modelPortfolio to analysisService.analyze(AnalysisRequest(listOf(modelPortfolio.portfolio))) }
             .toMap()
 
+    private val mus = analyses.map { it.value.analysis.expectedReturn }
+
+    private val sigmaLookup = analyses
+            .values
+            .map { it.analysis.expectedReturn to it.analysis.volatility }
+            .toMap()
+
+    private val muMax = analyses
+            .maxBy { it.value.analysis.expectedReturn }
+            ?.value
+            ?.analysis
+            ?.expectedReturn ?: error("")
+
+    private val muMin = analyses
+            .minBy { it.value.analysis.expectedReturn }
+            ?.value
+            ?.analysis
+            ?.expectedReturn ?: error("")
+
     override fun mus(): List<Double> {
-        return analyses.map { it.value.analysis.expectedReturn }
+        return mus
     }
 
     override fun sigma(mu: Double): Double {
-        return analyses
-                .values
-                .find { it.analysis.expectedReturn == mu }
-                ?.analysis
-                ?.volatility ?: error("Unable to find model portfolio with volatility corresponding to expected return $mu")
+        return sigmaLookup[mu] ?: error("Unable to find model portfolio with volatility corresponding to expected return $mu")
     }
 
     override fun muMax(): Double {
-        return analyses
-                .maxBy { it.value.analysis.expectedReturn }
-                ?.value
-                ?.analysis
-                ?.expectedReturn ?: error("")
+        return muMax
     }
 
     override fun muMin(): Double {
-        return analyses
-                .minBy { it.value.analysis.expectedReturn }
-                ?.value
-                ?.analysis
-                ?.expectedReturn ?: error("")
+        return muMin
     }
 
     fun getPortfolio(mu: Double): ModelPortfolio {
