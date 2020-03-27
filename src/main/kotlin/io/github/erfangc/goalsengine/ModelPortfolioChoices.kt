@@ -3,7 +3,6 @@ package io.github.erfangc.goalsengine
 import io.github.erfangc.analysis.AnalysisRequest
 import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.users.settings.ModelPortfolio
-import io.github.erfangc.users.settings.ModelPortfolioSettings
 
 /**
  * This [PortfolioChoices] implementation works to produce
@@ -15,10 +14,10 @@ import io.github.erfangc.users.settings.ModelPortfolioSettings
  * and there are infinite combinations of mu/sigma pairs (along the efficient frontier). Here the possible mu/sigmas pairs
  * are limited the number of model portfolios
  */
-class ModelPortfolioChoices(private val analysisService: AnalysisService, private val modelPortfolioSettings: ModelPortfolioSettings) : PortfolioChoices {
+class ModelPortfolioChoices(private val analysisService: AnalysisService,
+                            modelPortfolios: List<ModelPortfolio>) : PortfolioChoices {
 
-    private val analyses = modelPortfolioSettings
-            .modelPortfolios
+    private val analyses = modelPortfolios
             .map { modelPortfolio -> modelPortfolio to analysisService.analyze(AnalysisRequest(listOf(modelPortfolio.portfolio))) }
             .toMap()
 

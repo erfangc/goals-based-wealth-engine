@@ -3,15 +3,15 @@ package io.github.erfangc.proposals
 import io.github.erfangc.analysis.AnalysisRequest
 import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.convexoptimizer.*
-import io.github.erfangc.goalsengine.Cashflow
-import io.github.erfangc.goalsengine.GoalsEngineService
-import io.github.erfangc.goalsengine.GoalsOptimizationRequest
-import io.github.erfangc.goalsengine.GoalsOptimizationResponse
+import io.github.erfangc.goalsengine.*
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
+import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.portfolios.PortfolioService
-import io.github.erfangc.users.settings.ModelPortfolio
+import io.github.erfangc.portfolios.Position
+import io.github.erfangc.proposals.models.*
 import io.github.erfangc.users.UserService
+import io.github.erfangc.users.settings.ModelPortfolio
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
@@ -41,27 +41,53 @@ class ProposalsService(
      * and then use convex optimization to target that portfolio given all constraints
      */
     fun generateProposal(req: GenerateProposalRequest): GenerateProposalResponse {
-        // step 1 - run goals based simulation to find risk reward that maximizes chance of success
-        val goalsOutput = goalsOptimization(req)
 
-        // step 2 - given the target risk reward, use convex optimization to find the actual trades
-        val optimizationResponse = convexOptimization(goalsOutput, req)
+        // if the client has an assigned model portfolio, do not run goals optimization, instead just run a probability
+        // analysis
+        val (goalsOutput, optimizationResponse) = when {
+            req.client.modelPortfolioId != null -> {
+                // do not run simulation use the probability engine to derive the probability
+                // of reaching the client's goals
+                TODO("run a simple analysis without going through the goals engine")
+            }
+            req.client.autoAssignModelPortfolio == true -> {
+                // automatically choose a model portfolio
+                val goalsOutput = modelPortfoliosBasedGoalsOptimization(req)
+                (goalsOutput to constrainedTrackingErrorOptimization(goalsOutput, req))
+            }
+            else -> {
+                // use efficient frontier
+                val goalsOutput = efficientFrontierBasedGoalsOptimization(req)
+                (goalsOutput to constrainedMeanVarianceOptimization(goalsOutput, req))
+            }
+        }
 
-        val portfolios = portfolioDefinitions(req)?.map { it.portfolio } ?: emptyList()
+        return doPostOptimizationsAnalysis(optimizationResponse, req, goalsOutput)
+    }
+
+    /**
+     * Perform any post goals / convex optimization step analysis (this is the simple stuff like computing the
+     * final portfolio's risk & returns)
+     */
+    private fun doPostOptimizationsAnalysis(optimizationResponse: ConvexOptimizationResponse,
+                                            req: GenerateProposalRequest,
+                                            goalsOutput: GoalsOptimizationOutput): GenerateProposalResponse {
         val proposedAnalysisResponse = analysisService.analyze(AnalysisRequest(optimizationResponse.proposedPortfolios))
         val originalAnalysisResponse = analysisService.analyze(AnalysisRequest(optimizationResponse.originalPortfolios))
 
         val proposal = Proposal(
                 id = UUID.randomUUID().toString(),
-                portfolios = portfolios,
+                portfolios = portfolioDefinitions(req).map { it.portfolio },
                 proposedOrders = optimizationResponse.proposedOrders
         )
 
         if (req.save) {
             proposalCrudService.saveProposal(proposal)
         }
+
         val oAnalysis = originalAnalysisResponse.analysis
         val pAnalysis = proposedAnalysisResponse.analysis
+
         return GenerateProposalResponse(
                 proposal = proposal,
                 proposedPortfolios = optimizationResponse.proposedPortfolios,
@@ -83,7 +109,7 @@ class ProposalsService(
                                 proposed = pAnalysis.volatility
                         ),
                         probabilityOfSuccess = ProbabilityOfSuccess(
-                                original = 0.0, // TODO
+                                original = 0.0, // TODO use the ProbabilityEngine to fill this in
                                 proposed = goalsOutput.probabilityOfSuccess
                         ),
                         allocations = GenerateProposalResponseAllocations(
@@ -99,22 +125,46 @@ class ProposalsService(
         )
     }
 
-    private fun goalsOptimization(req: GenerateProposalRequest): GoalsOptimizationResponse {
+    private fun modelPortfoliosBasedGoalsOptimization(req: GenerateProposalRequest): ModelPortfolioBasedGoalsOptimizationResponse {
         val stopWatch = StopWatch()
-        log.info("Running goals engine to figure out the best risk reward for ${req.client.id}")
-
-        stopWatch.start()
-        val goalsOutput = goalsEngineService.goalsOptimization(
-                GoalsOptimizationRequest(
-                        modelPortfolios = modelPortfolios(),
+        log.info("Running goals engine to figure out the best model portfolio for ${req.client.id}")
+        val goalsOutput = goalsEngineService.modelPortfolioBasedGoalsOptimization(
+                ModelPortfolioBasedGoalsOptimizationRequest(
                         initialWealth = initialInvestment(req),
                         cashflows = cashflows(req),
                         investmentHorizon = investmentHorizon(req),
-                        goal = goal(req)
+                        goal = goal(req),
+                        modelPortfolios = userService.currentUser().settings?.modelPortfolioSettings?.modelPortfolios ?: error("the user has not model portfolios defined")
                 )
         )
         stopWatch.stop()
+        log.info("Finished goals engine to figure out the best model portfolio for ${req.client.id}," +
+                " probabilityOfSuccess=${goalsOutput.probabilityOfSuccess}, " +
+                " expectedReturn=${goalsOutput.expectedReturn}, " +
+                " volatility=${goalsOutput.volatility}, " +
+                " modelPortfolio.id=${goalsOutput.modelPortfolio.id}, " +
+                " modelPortfolio.name=${goalsOutput.modelPortfolio.portfolio.name}, " +
+                " run time: ${stopWatch.lastTaskTimeMillis} ms")
 
+        return goalsOutput
+    }
+
+    private fun efficientFrontierBasedGoalsOptimization(req: GenerateProposalRequest): EfficientFrontierBasedGoalsOptimizationResponse {
+        val stopWatch = StopWatch()
+        log.info("Running goals engine to figure out the best risk reward for ${req.client.id}")
+        val whiteListItems = userService.currentUser().settings?.whiteList
+                ?: error("we cannot find a white list for you")
+        stopWatch.start()
+        val goalsOutput = goalsEngineService.efficientFrontierBasedGoalsOptimization(
+                EfficientFrontierBasedGoalsOptimizationRequest(
+                        initialWealth = initialInvestment(req),
+                        cashflows = cashflows(req),
+                        investmentHorizon = investmentHorizon(req),
+                        goal = goal(req),
+                        whiteListItems = whiteListItems
+                )
+        )
+        stopWatch.stop()
         log.info("Finished goals engine to figure out the best risk reward for ${req.client.id}," +
                 " probabilityOfSuccess=${goalsOutput.probabilityOfSuccess}, " +
                 " expectedReturn=${goalsOutput.expectedReturn}, " +
@@ -124,20 +174,27 @@ class ProposalsService(
         return goalsOutput
     }
 
-    private fun modelPortfolios(): List<ModelPortfolio>? {
-        // TODO figure out model portfolios from client object
-        return null
+    private fun constrainedTrackingErrorOptimization(goalsOutput: ModelPortfolioBasedGoalsOptimizationResponse,
+                                                     req: GenerateProposalRequest): ConvexOptimizationResponse {
+        val modelPortfolio = goalsOutput.modelPortfolio
+        return convexOptimizerService.constrainedTrackingErrorOptimization(
+                ConstrainedTrackingErrorOptimizationRequest(
+                        portfolios = portfolioDefinitions(req, modelPortfolio),
+                        modelPortfolio = modelPortfolio
+                )
+        )
     }
 
-    private fun convexOptimization(goalsOutput: GoalsOptimizationResponse, req: GenerateProposalRequest): OptimizePortfolioResponse {
+    private fun constrainedMeanVarianceOptimization(
+            efficientFrontierBasedGoalsOutput: EfficientFrontierBasedGoalsOptimizationResponse,
+            req: GenerateProposalRequest
+    ): ConvexOptimizationResponse {
         val stopWatch = StopWatch()
-        val expectedReturn = goalsOutput.expectedReturn
+        val expectedReturn = efficientFrontierBasedGoalsOutput.expectedReturn
         log.info("Running convex optimization to target expected return ${expectedReturn * 100}% ${req.client.id}")
         stopWatch.start()
-        val optimizePortfolioResponse = convexOptimizerService.optimizePortfolio(
-                OptimizePortfolioRequest(
-                        modelPortfolio = goalsOutput.modelPortfolio,
-                        newInvestments = req.newInvestment,
+        val optimizePortfolioResponse = convexOptimizerService.constrainedMeanVarianceOptimization(
+                ConstrainedMeanVarianceOptimizationRequest(
                         objectives = Objectives(expectedReturn = expectedReturn),
                         portfolios = portfolioDefinitions(req)
                 )
@@ -149,15 +206,52 @@ class ProposalsService(
     }
 
     /**
-     * Grab existing portfolios
+     * Create the portfolio definitions for convex optimization. This steps
+     * creates any new portfolios as necessary (if new funds are used) and resolves the white list
+     * for each portfolio
      */
-    private fun portfolioDefinitions(req: GenerateProposalRequest) =
-            portfolioService
-                    .getForClientId(req.client.id)
-                    ?.map { portfolio ->
-                        val withdrawRestricted = listOf("ira", "401k").contains(portfolio.source?.subType)
-                        PortfolioDefinition(portfolio = portfolio, withdrawRestricted = withdrawRestricted)
-                    }
+    private fun portfolioDefinitions(req: GenerateProposalRequest, modelPortfolio: ModelPortfolio? = null): List<PortfolioDefinition> {
+
+        // use the whitelist resolver to populate white list per portfolio
+        val whiteListResolver = WhiteListResolver(userService)
+
+        val existingDefinitions =  portfolioService
+                .getForClientId(req.client.id)
+                ?.map { portfolio ->
+                    val withdrawRestricted = listOf("ira", "401k").contains(portfolio.source?.subType)
+                    val whiteListItems = whiteListResolver.resolveWhiteListItems(ResolveWhiteListItemRequest(portfolio, modelPortfolio)).whiteListItems
+                    PortfolioDefinition(
+                            portfolio = portfolio,
+                            withdrawRestricted = withdrawRestricted,
+                            whiteList = whiteListItems
+                    )
+                }
+
+        val newPortfolio = listOfNotNull(
+                req.newInvestment?.let { newInvestments ->
+                    val portfolio = Portfolio(
+                            id = "new-portfolio",
+                            name = "New Portfolio",
+                            // position line item representing the new investment
+                            positions = listOf(Position(id = "CASH", assetId = "USD", quantity = newInvestments))
+                    )
+                    val whiteList = whiteListResolver.resolveWhiteListItems(ResolveWhiteListItemRequest(portfolio, modelPortfolio)).whiteListItems
+                    PortfolioDefinition(
+                            portfolio = portfolio,
+                            whiteList = whiteList
+                    )
+                }
+        )
+        val ret = ((existingDefinitions ?: emptyList()) + newPortfolio)
+                // get rid of any portfolios that might not have a position
+                .filter { it.portfolio.positions.isNotEmpty() }
+        if (ret.isEmpty()) {
+            throw IllegalStateException("Unable to initiate optimization since the client has no existing holdings nor putting in new investments")
+        } else {
+            return ret
+        }
+    }
+
 
     /**
      * Derive the goal (lump sum) amount to target at retirement
@@ -204,7 +298,7 @@ class ProposalsService(
                     .marketValueAnalysis
                     .netAssetValue
         }
-        return (existingInvestments ?: 0.0) + req.newInvestment
+        return (existingInvestments ?: 0.0) + (req.newInvestment ?: 0.0)
     }
 
 }

@@ -1,4 +1,4 @@
-package io.github.erfangc.proposals
+package io.github.erfangc.proposals.models
 
 data class GenerateProposalGivenClientIdRequest(
         val newInvestment: Double = 0.0,

@@ -1,4 +1,4 @@
-package io.github.erfangc.proposals
+package io.github.erfangc.proposals.models
 
 data class MarketValue(
         val original: Map<String, Map<String, Double>>,

@@ -3,7 +3,6 @@ package io.github.erfangc.convexoptimizer
 import ilog.cplex.IloCplex
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 import io.github.erfangc.portfolios.Position
-import io.github.erfangc.users.settings.WhiteListItem
 import java.util.*
 
 object PositionVariablesFactory {
@@ -21,17 +20,19 @@ object PositionVariablesFactory {
      *
      * This is why in addition to asset decision variables, we also define a set of decision variables for the positions
      */
-    fun positionVars(portfolios: List<PortfolioDefinition>,
-                     cplex: IloCplex,
-                     marketValueAnalysis: MarketValueAnalysis,
-                     defaultWhiteList: List<WhiteListItem>?): List<PositionVar> {
+    fun positionVars(
+            portfolios: List<PortfolioDefinition>,
+            cplex: IloCplex,
+            marketValueAnalysis: MarketValueAnalysis
+    ): List<PositionVar> {
         return portfolios.flatMap { portfolioDefinition ->
             val portfolio = portfolioDefinition.portfolio
             val portfolioId = portfolio.id
             val existingPositionVars = portfolio.positions.map { position ->
                 val positionId = position.id
                 val weights = marketValueAnalysis.weights[portfolioId] ?: emptyMap()
-                val portfolioWt = marketValueAnalysis.netAssetValues[portfolioId]?.div(marketValueAnalysis.netAssetValue) ?: 0.0
+                val portfolioWt = marketValueAnalysis.netAssetValues[portfolioId]?.div(marketValueAnalysis.netAssetValue)
+                        ?: 0.0
                 val weight = weights[positionId] ?: 0.0
                 PositionVar(
                         id = "$portfolioId#$positionId",
@@ -44,9 +45,8 @@ object PositionVariablesFactory {
 
             // use the white list from the portfolio itself if defined
             // i.e. this would be the case if the account is a 401K account with limited investment options
-            val whiteList = defaultWhiteList ?: portfolioDefinition.whiteList
-            val whiteListVars = whiteList?.map {
-                whiteListItem ->
+            val whiteList = portfolioDefinition.whiteList
+            val whiteListVars = whiteList.map { whiteListItem ->
                 val positionId = UUID.randomUUID().toString()
                 val assetId = whiteListItem.assetId
                 PositionVar(
@@ -55,7 +55,7 @@ object PositionVariablesFactory {
                         position = Position(id = positionId, quantity = 0.0, assetId = assetId),
                         portfolioId = portfolioId
                 )
-            } ?: emptyList()
+            }
             existingPositionVars + whiteListVars
         }
     }

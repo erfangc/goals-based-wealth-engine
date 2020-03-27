@@ -7,7 +7,7 @@ import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 
 data class OptimizationContext(
         val cplex: IloCplex,
-        val request: OptimizePortfolioRequest,
+        val request: ConvexOptimizationRequest,
         val assets: Map<String, Asset>,
         val assetIds: List<String>,
         val assetVars: Map<String, IloNumVar>,

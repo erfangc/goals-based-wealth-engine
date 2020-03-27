@@ -1,6 +1,10 @@
 package io.github.erfangc.proposals
 
 import io.github.erfangc.clients.ClientService
+import io.github.erfangc.proposals.models.GenerateProposalGivenClientIdRequest
+import io.github.erfangc.proposals.models.GenerateProposalRequest
+import io.github.erfangc.proposals.models.GenerateProposalResponse
+import io.github.erfangc.proposals.models.Proposal
 import org.springframework.web.bind.annotation.*
 
 @RestController

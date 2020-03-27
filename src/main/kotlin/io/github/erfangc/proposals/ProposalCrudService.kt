@@ -2,6 +2,7 @@ package io.github.erfangc.proposals
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.erfangc.proposals.models.Proposal
 import io.github.erfangc.users.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate

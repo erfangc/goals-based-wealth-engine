@@ -12,17 +12,7 @@ class VarianceExpressionBuilder(
         private val analysisService: AnalysisService
 ) {
 
-    fun varianceExpr(ctx: OptimizationContext): IloNumExpr {
-        val request = ctx.request
-        val modelPortfolio = request.modelPortfolio?.portfolio
-        return if (modelPortfolio != null) {
-            exprForTrackingError(modelPortfolio, ctx)
-        } else {
-            exprForVariance(ctx)
-        }
-    }
-
-    private fun exprForTrackingError(modelPortfolio: Portfolio, ctx: OptimizationContext): IloNumExpr {
+    fun exprForTrackingError(modelPortfolio: Portfolio, ctx: OptimizationContext): IloNumExpr {
         val cplex = ctx.cplex
         val modelPositions = modelPortfolio.positions.associateBy { it.assetId }
         val (analysis, _) = analysisService.analyze(AnalysisRequest(portfolios = listOf(modelPortfolio)))
@@ -52,7 +42,7 @@ class VarianceExpressionBuilder(
         return cplex.sum(trackingErrorTerms)
     }
 
-    private fun exprForVariance(ctx: OptimizationContext): IloNumExpr {
+    fun exprForVariance(ctx: OptimizationContext): IloNumExpr {
         val cplex = ctx.cplex
         // build the risk terms on which we minimize
         // this works by iterating over the asset decision variables

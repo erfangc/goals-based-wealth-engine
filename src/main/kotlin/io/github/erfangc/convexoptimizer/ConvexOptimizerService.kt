@@ -13,8 +13,6 @@ import io.github.erfangc.convexoptimizer.SolutionParser.parseSolution
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
-import io.github.erfangc.portfolios.Portfolio
-import io.github.erfangc.portfolios.Position
 import io.github.erfangc.users.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -36,22 +34,14 @@ class ConvexOptimizerService(
 
     private val varianceExpressionBuilder = VarianceExpressionBuilder(covarianceService, analysisService)
 
-    /**
-     *
-     * For convex optimization there are two classes of objectives:
-     *
-     * 1 - We create the objective as minimize
-     * portfolio risk given a variance covariance matrix
-     *
-     * Furthermore, we target an expected level of returns
-     *
-     * 2 - If a target (model) portfolio is provided, we minimize tracking error
-     * to that of the model portfolio (not done yet)
-     *
-     */
-    fun optimizePortfolio(req: OptimizePortfolioRequest): OptimizePortfolioResponse {
 
-        log.info("Beginning convex optimization for ${req.portfolios?.size ?: 0} portfolios")
+    /**
+     * Performs an convex optimization by minimizing the tracking error between the provided set of portfolios
+     * and the model portfolio
+     */
+    fun constrainedTrackingErrorOptimization(req: ConstrainedTrackingErrorOptimizationRequest): ConvexOptimizationResponse {
+
+        log.info("Beginning constrained tracking error optimization for ${req.portfolios?.size ?: 0} portfolios")
 
         // create an OptimizationContext instance to keep track of reusable references like
         // the decision variables, assets lookup etc.
@@ -67,16 +57,60 @@ class ConvexOptimizerService(
         val cplex = ctx.cplex
 
         // create the objective which is to minimize risk (our constraint is to target return)
-        cplex.addObjective(IloObjectiveSense.Minimize, varianceExpressionBuilder.varianceExpr(ctx))
+        cplex.addObjective(
+                IloObjectiveSense.Minimize, varianceExpressionBuilder
+                .exprForTrackingError(req.modelPortfolio.portfolio, ctx)
+        )
 
         // total weight must be 100%
         cplex.add(cplex.eq(1.0, cplex.sum(ctx.assetVars.values.toTypedArray()), "weight of all assets must equal 1.0"))
 
-        // the resulting portfolio must target the level of return
-        // this is not true if a model portfolio is provided (i.e. our goal is to minimize tracking error
-        if (req.modelPortfolio != null) {
-            cplex.add(cplex.ge(returnExpr(ctx), req.objectives.expectedReturn, "expected return must equal ${req.objectives.expectedReturn}"))
+        // position level restrictions
+        positionConstraints(ctx).forEach { constraint ->
+            cplex.add(constraint)
         }
+
+        // for any portfolio whose NAV must stay constant, we forbid transfer by fixing
+        // sum of position to original proportion to aggregate NAV
+        val portfolioConstraints = portfolioConstraint(ctx)
+        portfolioConstraints.forEach { constraint -> cplex.add(constraint) }
+
+        if (!cplex.solve()) {
+            log.error("Unable to solve the convex optimization problem cplex.status=${cplex.status}")
+            throw RuntimeException("The convex optimization problem cannot be solved")
+        }
+
+        // parse the solution back into a portfolio / orders
+        return parseSolution(ctx)
+    }
+
+    /**
+     *
+     */
+    fun constrainedMeanVarianceOptimization(req: ConstrainedMeanVarianceOptimizationRequest): ConvexOptimizationResponse {
+
+        log.info("Beginning constrained mean variance optimization for ${req.portfolios?.size ?: 0} portfolios")
+
+        // create an OptimizationContext instance to keep track of reusable references like
+        // the decision variables, assets lookup etc.
+        val ctx = optimizationContext(req)
+
+        log.info(
+                "Built OptimizationContext for convex optimization," +
+                        " assetVars=${ctx.assetVars.size}," +
+                        " positionVars=${ctx.positionVars.size}," +
+                        " aggregateNav=${ctx.aggregateNav}"
+        )
+
+        val cplex = ctx.cplex
+
+        // create the objective which is to minimize risk (our constraint is to target return)
+        cplex.addObjective(IloObjectiveSense.Minimize, varianceExpressionBuilder.exprForVariance(ctx))
+
+        // total weight must be 100%
+        cplex.add(cplex.eq(1.0, cplex.sum(ctx.assetVars.values.toTypedArray()), "weight of all assets must equal 1.0"))
+
+        cplex.add(cplex.ge(returnExpr(ctx), req.objectives.expectedReturn, "expected return must equal ${req.objectives.expectedReturn}"))
 
         // position level restrictions
         positionConstraints(ctx).forEach { constraint ->
@@ -147,48 +181,26 @@ class ConvexOptimizerService(
         return cplex.sum(returnExpr)
     }
 
-    private fun optimizationContext(req: OptimizePortfolioRequest,
+    private fun optimizationContext(req: ConvexOptimizationRequest,
                                     cplex: IloCplex = IloCplex()): OptimizationContext {
-        // from the market value analyse we can formulate position level constraints
-        val portfolios = (
-                (req.portfolios ?: emptyList()) +
-                        listOfNotNull(
-                                req.newInvestments?.let { newInvestments ->
-                                    PortfolioDefinition(
-                                            portfolio = Portfolio(
-                                                    id = "new-portfolio",
-                                                    name = "New Portfolio",
-                                                    positions = listOf(
-                                                            Position(id = "CASH", assetId = "USD", quantity = newInvestments)
-                                                    )
-                                            )
-                                    )
-                                }
-                        )
-                )
-                // get rid of any portfolios that might not have a position
-                .filter { it.portfolio.positions.isNotEmpty() }
 
-        if (portfolios.isEmpty()) {
-            // it is not possible to construct a portfolio
-            // without existing portfolios or an new amount to invest
-            throw IllegalStateException("Unable to proceed with convex optimization without either existing portfolios or a new investment amount")
-        }
-
-        val assetIds = assetIds(req)
+        val assetIdsInPosition = assetIdsInPosition(req)
+        val whiteListAssetIds = whiteListAssetIds(req)
+        log.info("Found ${assetIdsInPosition.size} distinct assets in position, ${whiteListAssetIds.size} distinct assets on the white list")
+        val assetIds = (assetIdsInPosition + whiteListAssetIds + "USD").distinct()
+        log.info("Found ${assetIds.size} distinct assets in in total, these are the asset level decision variables")
         val assets = assetService.getAssets(assetIds).associateBy { it.id }
 
         // each asset is an decision variable
         val assetVars = assetIds.map { assetId -> assetId to cplex.numVar(0.0, 1.0, assetId) }.toMap()
         val expectedReturns = expectedReturnsService.getExpectedReturns(assetIds)
-        val marketValueAnalysis = marketValueAnalysis(portfolios)
+        val marketValueAnalysis = marketValueAnalysis(req.portfolios)
 
         // create the actual position variables (this method is a bit ugly, as it accepts many arguments, however it gets the job done)
         val positionVars = positionVars(
-                portfolios,
+                req.portfolios,
                 cplex,
-                marketValueAnalysis,
-                userService.currentUser().settings?.whiteList
+                marketValueAnalysis
         )
 
 
@@ -202,7 +214,7 @@ class ConvexOptimizerService(
                 assets,
                 assetIds,
                 assetVars,
-                portfolios,
+                req.portfolios,
                 positionVars,
                 expectedReturns,
                 marketValueAnalysis,
@@ -210,22 +222,18 @@ class ConvexOptimizerService(
         )
     }
 
-    /**
-     * This is the comprehensive set of assets the user is allowed to hold
-     * regardless of whether the asset is part of existing hold or part of the white list
-     */
-    private fun assetIds(req: OptimizePortfolioRequest): List<String> {
-        val holdings = holdingAssetIds(req)
-        val user = userService.currentUser()
-        val whiteList = user.settings?.whiteList?.map { it.assetId } ?: emptyList()
-        return (holdings + whiteList + "USD").distinct()
-    }
-
-    private fun holdingAssetIds(req: OptimizePortfolioRequest): List<String> {
+    private fun assetIdsInPosition(req: ConvexOptimizationRequest): List<String> {
         return req
                 .portfolios
-                ?.flatMap { it.portfolio.positions.map { position -> position.assetId } }
-                ?: emptyList()
+                .flatMap { it.portfolio.positions.map { position -> position.assetId } }
+                .distinct()
+    }
+
+    private fun whiteListAssetIds(req: ConvexOptimizationRequest): List<String> {
+        return req
+                .portfolios
+                .flatMap { it.whiteList.map { item -> item.assetId } }
+                .distinct()
     }
 
 }

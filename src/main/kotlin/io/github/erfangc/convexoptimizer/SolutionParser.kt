@@ -10,7 +10,7 @@ object SolutionParser {
      * Parse through all the decision variables that represents suggested trading
      * in different positions across different portfolios
      */
-    fun parseSolution(ctx: OptimizationContext): OptimizePortfolioResponse {
+    fun parseSolution(ctx: OptimizationContext): ConvexOptimizationResponse {
         val proposedOrders = ctx
                 .positionVars
                 .groupBy { it.portfolioId }
@@ -65,7 +65,7 @@ object SolutionParser {
             }
             portfolio.copy(positions = updatedExistingPositions + newPositions)
         }
-        return OptimizePortfolioResponse(
+        return ConvexOptimizationResponse(
                 originalPortfolios = ctx.request.portfolios?.map { it.portfolio } ?: emptyList(),
                 proposedPortfolios = proposedPortfolios,
                 proposedOrders = proposedOrders

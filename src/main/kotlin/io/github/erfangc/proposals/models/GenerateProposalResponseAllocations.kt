@@ -1,4 +1,4 @@
-package io.github.erfangc.proposals
+package io.github.erfangc.proposals.models
 
 import io.github.erfangc.marketvalueanalysis.Allocations
 

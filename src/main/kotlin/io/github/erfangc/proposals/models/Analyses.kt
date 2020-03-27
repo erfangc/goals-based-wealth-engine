@@ -1,4 +1,6 @@
-package io.github.erfangc.proposals
+package io.github.erfangc.proposals.models
+
+import io.github.erfangc.proposals.*
 
 data class Analyses(
         val netAssetValue: NetAssetValue,
