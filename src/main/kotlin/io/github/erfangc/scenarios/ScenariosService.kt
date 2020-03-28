@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.model.ComparisonOperator
 import com.amazonaws.services.dynamodbv2.model.Condition
 import com.amazonaws.services.dynamodbv2.model.QueryRequest
 import io.github.erfangc.assets.AssetTimeSeriesService
+import io.github.erfangc.assets.TimeSeriesDatum
 import io.github.erfangc.util.DateUtils.mostRecentMonthEnd
 import io.github.erfangc.util.DynamoDBUtil
 import io.github.erfangc.util.PortfolioUtils.assetIds
@@ -61,7 +62,7 @@ class ScenariosService(private val assetTimeSeriesService: AssetTimeSeriesServic
             ).items
             items.map { DynamoDBUtil.fromItem<TimeSeriesDatum>(it) }
         }
-        return timeSeries.groupBy { it.timeSeriesId }
+        return timeSeries.groupBy { it.assetId }
     }
 
     private fun timeSeriesIds(req: ScenariosAnalysisRequest): List<String> {

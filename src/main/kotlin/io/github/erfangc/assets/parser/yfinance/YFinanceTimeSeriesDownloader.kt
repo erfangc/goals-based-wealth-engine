@@ -11,6 +11,8 @@ import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpGet
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.net.URLEncoder
+import java.nio.charset.Charset
 import java.time.Instant
 import java.time.ZoneId
 
@@ -22,7 +24,8 @@ class YFinanceTimeSeriesDownloader(private val httpClient: HttpClient,
     private val log = LoggerFactory.getLogger(YFinanceTimeSeriesDownloader::class.java)
 
     fun downloadHistoryForTicker(ticker: String, save: Boolean): List<TimeSeriesDatum> {
-        val jsonNode = httpClient.execute(HttpGet("https://query1.finance.yahoo.com/v8/finance/chart/$ticker?range=max")) { response ->
+        val encodedTicker = URLEncoder.encode(ticker, Charset.defaultCharset())
+        val jsonNode = httpClient.execute(HttpGet("https://query1.finance.yahoo.com/v8/finance/chart/$encodedTicker?range=max")) { response ->
             val json = response.entity.content.bufferedReader().readText()
             objectMapper.readTree(json)
         }

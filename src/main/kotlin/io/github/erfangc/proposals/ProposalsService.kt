@@ -38,8 +38,10 @@ class ProposalsService(
     /**
      * Initiate the workflow of creating a proposal
      *
-     * In goals based proposal workflow, we first seek an optimal portfolio along the efficient frontier
-     * and then use convex optimization to target that portfolio given all constraints
+     * The proposal workflow have a few possible steps it might take:
+     *
+     *  1 - if the client has not been assigned a model portfolio, and that model portfolio assignment is not enabled
+     *  the efficient frontier will be used to determine optimal allocat
      */
     fun generateProposal(req: GenerateProposalRequest): GenerateProposalResponse {
 

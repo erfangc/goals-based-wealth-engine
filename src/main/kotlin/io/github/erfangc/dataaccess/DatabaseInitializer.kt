@@ -14,6 +14,22 @@ class DatabaseInitializer(private val jdbcTemplate: JdbcTemplate) {
         createUsersTable()
         createPortfoliosTable()
         createProposalsTable()
+        createTimeSeriesDefinitionTable()
+    }
+
+    private fun createTimeSeriesDefinitionTable() {
+        log.info("Attempting to create the time series definition table if it does not exist")
+        //language=PostgreSQL
+        jdbcTemplate.execute("""
+            CREATE TABLE IF NOT EXISTS timeSeriesDefinitions (
+                id varchar not null,
+                name varchar not null,
+                assetId varchar not null,
+                url varchar,
+                description varchar,
+                PRIMARY KEY (id)
+            )
+        """.trimIndent())
     }
 
     private fun createPortfoliosTable() {
