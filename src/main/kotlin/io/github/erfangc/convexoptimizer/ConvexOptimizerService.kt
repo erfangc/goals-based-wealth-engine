@@ -41,7 +41,7 @@ class ConvexOptimizerService(
      */
     fun constrainedTrackingErrorOptimization(req: ConstrainedTrackingErrorOptimizationRequest): ConvexOptimizationResponse {
 
-        log.info("Beginning constrained tracking error optimization for ${req.portfolios?.size ?: 0} portfolios")
+        log.info("Beginning constrained tracking error optimization for ${req.portfolios.size} portfolios")
 
         // create an OptimizationContext instance to keep track of reusable references like
         // the decision variables, assets lookup etc.
@@ -89,7 +89,7 @@ class ConvexOptimizerService(
      */
     fun constrainedMeanVarianceOptimization(req: ConstrainedMeanVarianceOptimizationRequest): ConvexOptimizationResponse {
 
-        log.info("Beginning constrained mean variance optimization for ${req.portfolios?.size ?: 0} portfolios")
+        log.info("Beginning constrained mean variance optimization for ${req.portfolios.size} portfolios")
 
         // create an OptimizationContext instance to keep track of reusable references like
         // the decision variables, assets lookup etc.

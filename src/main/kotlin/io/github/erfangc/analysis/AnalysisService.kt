@@ -7,6 +7,10 @@ import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisResponse
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.Portfolio
+import io.github.erfangc.scenarios.ScenariosAnalysisRequest
+import io.github.erfangc.scenarios.ScenariosService
+import io.github.erfangc.users.User
+import io.github.erfangc.users.UserService
 import io.github.erfangc.util.PortfolioUtils.assetIds
 import org.springframework.stereotype.Service
 import kotlin.math.sqrt
@@ -15,10 +19,14 @@ import kotlin.math.sqrt
 class AnalysisService(
         private val marketValueAnalysisService: MarketValueAnalysisService,
         private val expectedReturnsService: ExpectedReturnsService,
-        private val covarianceService: CovarianceService
+        private val covarianceService: CovarianceService,
+        private val scenariosService: ScenariosService,
+        private val userService: UserService
 ) {
 
     fun analyze(req: AnalysisRequest): AnalysisResponse {
+        val user = userService.currentUser()
+
         // flatten the group of portfolios into a single one
         val portfolios = req.portfolios
         val marketValueAnalysisResponse = marketValueAnalysis(portfolios)
@@ -27,16 +35,21 @@ class AnalysisService(
         val marketValueAnalysis = marketValueAnalysisResponse.marketValueAnalysis
         val expectedReturn = expectedReturn(portfolios, marketValueAnalysis)
         val volatility = volatility(portfolios, marketValueAnalysis)
+        val scenarioOutputs = scenarioOutputs(req, user)
 
         return AnalysisResponse(
                 Analysis(
                         marketValueAnalysis = marketValueAnalysis,
                         expectedReturn = expectedReturn,
-                        volatility = volatility
+                        volatility = volatility,
+                        scenarioOutputs = scenarioOutputs
                 ),
                 assets = marketValueAnalysisResponse.assets
         )
     }
+
+    private fun scenarioOutputs(req: AnalysisRequest, user: User) =
+            scenariosService.scenariosAnalysis(ScenariosAnalysisRequest(req.portfolios, user.settings.scenarioDefinitions)).scenarioOutputs
 
     private fun volatility(portfolios: List<Portfolio>, marketValueAnalysis: MarketValueAnalysis): Double {
         if (portfolios.isEmpty()) {

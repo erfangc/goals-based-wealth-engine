@@ -1,5 +1,7 @@
-package io.github.erfangc.proposals.models
+package io.github.erfangc.proposals
 
+import io.github.erfangc.proposals.models.ResolveWhiteListItemRequest
+import io.github.erfangc.proposals.models.ResolveWhiteListItemResponse
 import io.github.erfangc.users.UserService
 import io.github.erfangc.users.settings.WhiteListItem
 
@@ -41,8 +43,7 @@ class WhiteListResolver(private val userService: UserService) {
                 ResolveWhiteListItemResponse(whiteListItems = whiteListItems)
             }
             else -> {
-                val efficientFrontierWhiteList = userService.currentUser().settings?.whiteList?.map { it.assetId }
-                        ?: emptyList()
+                val efficientFrontierWhiteList = userService.currentUser().settings.whiteList.map { it.assetId }
                 val whiteListItems =
                         (req.portfolio
                                 .positions.map { it.assetId } + efficientFrontierWhiteList)

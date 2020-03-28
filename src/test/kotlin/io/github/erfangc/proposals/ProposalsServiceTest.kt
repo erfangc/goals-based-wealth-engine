@@ -14,6 +14,7 @@ import io.github.erfangc.goalsengine.GoalsEngineService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.PortfolioService
 import io.github.erfangc.proposals.models.GenerateProposalRequest
+import io.github.erfangc.scenarios.ScenariosService
 import io.github.erfangc.users.UserService
 import io.github.erfangc.util.DynamoDBUtil.objectMapper
 import io.mockk.every
@@ -39,7 +40,8 @@ internal class ProposalsServiceTest {
         val covarianceService = CovarianceService(assetTimeSeriesService)
         val expectedReturnsService = ExpectedReturnsService(assetTimeSeriesService = assetTimeSeriesService, assetService = assetService)
         val marketValueAnalysisService = MarketValueAnalysisService(assetService = assetService)
-        val analysisService = AnalysisService(marketValueAnalysisService, expectedReturnsService, covarianceService)
+        val scenariosService = ScenariosService(assetTimeSeriesService, marketValueAnalysisService)
+        val analysisService = AnalysisService(marketValueAnalysisService, expectedReturnsService, covarianceService, scenariosService, userService)
 
         val goalsEngineService = GoalsEngineService(
                 analysisService = analysisService,

@@ -162,6 +162,10 @@ class ProposalsService(
                         netAssetValue = NetAssetValue(
                                 original = oAnalysis.marketValueAnalysis.netAssetValue,
                                 proposed = oAnalysis.marketValueAnalysis.netAssetValue
+                        ),
+                        scenarioOutputs = ScenarioOutputs(
+                                original = oAnalysis.scenarioOutputs,
+                                proposed = pAnalysis.scenarioOutputs
                         )
                 ),
                 assets = proposedAnalysisResponse.assets

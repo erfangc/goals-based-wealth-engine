@@ -1,7 +1,5 @@
 package io.github.erfangc.proposals.models
 
-import io.github.erfangc.proposals.*
-
 data class Analyses(
         val netAssetValue: NetAssetValue,
         val marketValue: MarketValue,
@@ -9,6 +7,6 @@ data class Analyses(
         val allocations: GenerateProposalResponseAllocations,
         val expectedReturn: ExpectedReturn,
         val volatility: Volatility,
+        val scenarioOutputs: ScenarioOutputs,
         val probabilityOfSuccess: ProbabilityOfSuccess
 )
-
