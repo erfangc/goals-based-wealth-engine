@@ -17,17 +17,17 @@ internal class YFinanceTimeSeriesDownloaderTest {
 
         val svc = YFinanceTimeSeriesDownloader(httpClient = httpClient, objectMapper = objectMapper, ddb = ddb)
 
-        svc.downloadHistoryForTicker("AGG", true)
-        svc.downloadHistoryForTicker("IVV", true)
-        svc.downloadHistoryForTicker("VTI", true)
-        svc.downloadHistoryForTicker("VEA", true)
-        svc.downloadHistoryForTicker("VWO", true)
-        svc.downloadHistoryForTicker("VXF", true)
-        svc.downloadHistoryForTicker("BND", true)
-        svc.downloadHistoryForTicker("BNDX", true)
-        svc.downloadHistoryForTicker("C", true)
-        svc.downloadHistoryForTicker("AAPL", true)
-        svc.downloadHistoryForTicker("AMZN", true)
+        svc.downloadHistoryForTicker("AGG", save = true)
+        svc.downloadHistoryForTicker("IVV", save = true)
+        svc.downloadHistoryForTicker("VTI", save = true)
+        svc.downloadHistoryForTicker("VEA", save = true)
+        svc.downloadHistoryForTicker("VWO", save = true)
+        svc.downloadHistoryForTicker("VXF", save = true)
+        svc.downloadHistoryForTicker("BND", save = true)
+        svc.downloadHistoryForTicker("BNDX", save = true)
+        svc.downloadHistoryForTicker("C", save = true)
+        svc.downloadHistoryForTicker("AAPL", save = true)
+        svc.downloadHistoryForTicker("AMZN", save = true)
 
     }
 }

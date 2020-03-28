@@ -1,15 +1,13 @@
 package io.github.erfangc.scenarios
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
-import com.amazonaws.services.dynamodbv2.model.AttributeValue
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator
-import com.amazonaws.services.dynamodbv2.model.Condition
-import com.amazonaws.services.dynamodbv2.model.QueryRequest
 import io.github.erfangc.assets.AssetTimeSeriesService
 import io.github.erfangc.assets.TimeSeriesDatum
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
+import io.github.erfangc.util.DateUtils.months
 import io.github.erfangc.util.DateUtils.mostRecentMonthEnd
-import io.github.erfangc.util.DynamoDBUtil
 import io.github.erfangc.util.PortfolioUtils.assetIds
+import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -19,50 +17,119 @@ import java.time.LocalDate
  * Scenario gains and losses at the individual asset level is computed
  * as the shock sizes * the regression beta between the indices being shocked in an scenario analysis
  * and the asset's own return time series
- *
- * TODO in a factor based model, asset returns are built up from factor returns
  */
 @Service
 class ScenariosService(private val assetTimeSeriesService: AssetTimeSeriesService,
-                       private val ddb: AmazonDynamoDB) {
+                       private val marketValueAnalysisService: MarketValueAnalysisService) {
 
+    /**
+     * Scenario analysis is a two step process:
+     *
+     * 1 - figure out asset gain losses in response to shocks to the defined indices for each scenario (via OLS)
+     * 2 - aggregate teh asset level shocks to the portfolio level
+     */
     fun scenariosAnalysis(req: ScenariosAnalysisRequest): ScenarioAnalysisResponse {
-        val stop = mostRecentMonthEnd()
-        val start = mostRecentMonthEnd()
+        val assetGainLosses = assetGainLosses(req)
+        return ScenarioAnalysisResponse(computePortfolioScenarioOutputs(req, assetGainLosses))
+    }
 
-        val timeSeriesIds = timeSeriesIds(req)
-        val assetIds = assetIds(req.portfolios)
-        val assetReturnTimeSeries = assetTimeSeriesService.getMonthlyReturnTimeSeries(assetIds, start, stop)
-        TODO()
+    private fun computePortfolioScenarioOutputs(req: ScenariosAnalysisRequest,
+                                                assetGainLosses: Map<String, Map<ScenarioDefinition, Double>>): List<ScenarioOutput> {
+        val (netAssetValue, netAssetValues, _, weights, _) = marketValueAnalysisService
+                .marketValueAnalysis(MarketValueAnalysisRequest(req.portfolios))
+                .marketValueAnalysis
+        return req
+                .scenarioDefinitions
+                .map { scenarioDefinition ->
+                    val portfolioGainLoss = req
+                            .portfolios
+                            .flatMap { portfolio ->
+                                val portfolioId = portfolio.id
+                                val portfolioWt = netAssetValues[portfolioId]?.div(netAssetValue) ?: 0.0
+                                portfolio.positions.map { position ->
+                                    val assetId = position.assetId
+                                    val positionId = position.id
+                                    val weight = weights[portfolioId]?.get(positionId)?.times(portfolioWt) ?: 0.0
+                                    val gainLoss = assetGainLosses[assetId]?.get(scenarioDefinition) ?: 0.0
+                                    weight * gainLoss
+                                }
+                            }
+                            .sum()
+                    ScenarioOutput(id = scenarioDefinition.id, gainLoss = portfolioGainLoss, scenarioDefinition = scenarioDefinition)
+                }
     }
 
     /**
-     * fetches index / market time series from database
+     * Compute the asset level gains and losses in various scenarios
      */
-    private fun getTimeSeries(
-            timeSeriesIds: List<String>,
-            start: LocalDate,
-            stop: LocalDate
-    ): Map<String, List<TimeSeriesDatum>> {
-        val timeSeries = timeSeriesIds.flatMap { assetId ->
-            val hashKeys = "timeSeriesId" to Condition()
-                    .withAttributeValueList(AttributeValue(assetId))
-                    .withComparisonOperator(ComparisonOperator.EQ)
-            val rangeKeys = "date" to Condition()
-                    .withAttributeValueList(
-                            listOf(
-                                    AttributeValue(start.toString()),
-                                    AttributeValue(stop.toString())
-                            )
-                    )
-                    .withComparisonOperator(ComparisonOperator.BETWEEN)
-            val items = ddb.query(
-                    QueryRequest("non-asset-time-series")
-                            .withKeyConditions(mapOf(hashKeys, rangeKeys))
-            ).items
-            items.map { DynamoDBUtil.fromItem<TimeSeriesDatum>(it) }
+    private fun assetGainLosses(req: ScenariosAnalysisRequest): Map<String, Map<ScenarioDefinition, Double>> {
+        val (months, assetReturnTimeSeries, marketDataTimeSeries) = prepareData(req)
+        return assetReturnTimeSeries.keys.map { assetId ->
+            val y = months.map { month ->
+                assetReturnTimeSeries[assetId]?.get(month)?.value ?: 0.0
+            }.toDoubleArray()
+
+            assetId to req.scenarioDefinitions.map { scenarioDefinition ->
+                val shocks = scenarioDefinition.scenarioShocks
+
+                // define the x matrix (i.e. a matrix of the factors being shocked)
+                // build the "X" from marketDataTimeSeries
+                val x = months.map { month ->
+                    shocks.map { shock ->
+                        marketDataTimeSeries[shock.timeSeriesId]
+                                ?.get(month)
+                                ?.value ?: 0.0
+                    }.toDoubleArray()
+                }.toTypedArray()
+
+                // run the regression
+                val ols = OLSMultipleLinearRegression()
+                ols.newSampleData(y, x)
+                val betas = ols.estimateRegressionParameters()
+                val shockLookup = shockLookup(scenarioDefinition, shocks.map { it.timeSeriesId })
+
+                // figure out the position of each index to apply the shocks
+                // the 1st value is the intercept
+                val gainLoss = shockLookup.entries.sumByDouble { (idx, shock) ->
+                    betas[idx] * shock.shockSize
+                }
+                scenarioDefinition to gainLoss
+            }.toMap()
+
+        }.toMap()
+    }
+
+    /**
+     * Prepares and fetches data from the database as well as line up the months etc. so they
+     * can be retrieved and looked up easily as maps
+     *
+     * We return a triple out of convenience, not the best signature even for a private method of course
+     */
+    private fun prepareData(req: ScenariosAnalysisRequest): Triple<List<LocalDate>, Map<String, Map<LocalDate, TimeSeriesDatum>>, Map<String, Map<LocalDate, TimeSeriesDatum>>> {
+        val stop = mostRecentMonthEnd()
+        val start = mostRecentMonthEnd().minusYears(5)
+        val months = months(start, stop)
+
+        val timeSeriesIds = timeSeriesIds(req)
+        val assetIds = assetIds(req.portfolios)
+
+        // dependent variables
+        val assetReturnTimeSeries = assetTimeSeriesService
+                .getMonthlyReturnTimeSeries(assetIds, start, stop)
+                .groupBy { it.assetId }.mapValues { (_, v) -> v.associateBy { LocalDate.parse(it.date) } }
+
+        // independent variables
+        val marketDataTimeSeries = assetTimeSeriesService
+                .getMonthlyReturnTimeSeries(timeSeriesIds, start, stop)
+                .groupBy { it.assetId }.mapValues { (_, v) -> v.associateBy { LocalDate.parse(it.date) } }
+        return Triple(months, assetReturnTimeSeries, marketDataTimeSeries)
+    }
+
+    private fun shockLookup(scenarioDefinition: ScenarioDefinition, marketIndices: List<String>): Map<Int, ScenarioShock> {
+        return scenarioDefinition.scenarioShocks.associateBy { shock ->
+            val idx = marketIndices.indexOfFirst { it === shock.timeSeriesId }
+            idx + 1
         }
-        return timeSeries.groupBy { it.assetId }
     }
 
     private fun timeSeriesIds(req: ScenariosAnalysisRequest): List<String> {

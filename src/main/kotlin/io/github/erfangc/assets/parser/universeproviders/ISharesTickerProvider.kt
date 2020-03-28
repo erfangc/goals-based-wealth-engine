@@ -35,7 +35,7 @@ class ISharesTickerProvider(
                 val ticker = row.get(tickerIdx).textValue()
                 log.info("Processing ticker $ticker")
                 yFinanceFundAssetParser.parseTicker(ticker, true)
-                yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker, true)
+                yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker = ticker, save = true)
                 log.info("Finished processing ticker $ticker")
             } catch (e: Exception) {
                 log.error("Unable to process row $idx", e)

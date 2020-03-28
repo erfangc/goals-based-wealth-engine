@@ -79,7 +79,7 @@ class MutualFundTickersProvider(private val httpClient: HttpClient,
             log.info("Processing ticker $ticker for page ${page.get()} element $idx")
             try {
                 yFinanceFundAssetParser.parseTicker(ticker, true)
-                yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker, true)
+                yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker = ticker, save=  true)
             } catch (e: Exception) {
                 log.error("Unable to fully process ticker $ticker", e)
             }

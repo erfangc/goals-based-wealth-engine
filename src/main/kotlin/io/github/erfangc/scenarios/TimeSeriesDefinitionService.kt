@@ -20,7 +20,7 @@ class TimeSeriesDefinitionService(
                 .forEach {
                     row ->
                     row["assetId"]?.toString()?.let {
-                        assetId -> yFinanceTimeSeriesDownloader.downloadHistoryForTicker(assetId, save = true)
+                        assetId -> yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker = assetId, interval = "1mo", range = "10y", save = true)
                     }
                 }
     }

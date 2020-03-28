@@ -149,6 +149,7 @@ class ExpectedReturnsService(
                 val ols = OLSMultipleLinearRegression()
                 ols.newSampleData(y, x)
                 val betas = ols.estimateRegressionParameters()
+                // note the idx + 1, OLS estimate parameters makes the 1st parameter the intercept
                 val mu = averages.mapIndexed { idx, average -> betas[idx + 1] * average }.sum()
                 // expected returns must be annualized
                 assetId to mu * 12

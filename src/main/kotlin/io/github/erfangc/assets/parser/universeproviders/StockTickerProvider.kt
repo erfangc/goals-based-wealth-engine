@@ -35,7 +35,7 @@ class StockTickerProvider(private val yFinanceStockAssetParser: YFinanceStockAss
                             }
                             if (sector != "n/a") {
                                 yFinanceStockAssetParser.parseTicker(ticker, true)
-                                yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker, true)
+                                yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker, save  = true)
                                 val totalProcessed = totalCount.incrementAndGet()
                                 log.info("Finished processing $ticker, totalProcessed=$totalProcessed")
                             }

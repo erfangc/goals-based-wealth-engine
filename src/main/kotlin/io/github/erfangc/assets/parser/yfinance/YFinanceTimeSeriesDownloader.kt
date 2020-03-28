@@ -23,9 +23,18 @@ class YFinanceTimeSeriesDownloader(private val httpClient: HttpClient,
 ) {
     private val log = LoggerFactory.getLogger(YFinanceTimeSeriesDownloader::class.java)
 
-    fun downloadHistoryForTicker(ticker: String, save: Boolean): List<TimeSeriesDatum> {
+    fun downloadHistoryForTicker(
+            ticker: String,
+            interval: String = "1mo",
+            range: String = "max",
+            save: Boolean = false
+    ): List<TimeSeriesDatum> {
         val encodedTicker = URLEncoder.encode(ticker, Charset.defaultCharset())
-        val jsonNode = httpClient.execute(HttpGet("https://query1.finance.yahoo.com/v8/finance/chart/$encodedTicker?range=max")) { response ->
+        val params = listOf(
+                "interval" to interval,
+                "range" to range
+        ).joinToString("&") { "${it.first}=${it.second}" }
+        val jsonNode = httpClient.execute(HttpGet("https://query1.finance.yahoo.com/v8/finance/chart/$encodedTicker?$params")) { response ->
             val json = response.entity.content.bufferedReader().readText()
             objectMapper.readTree(json)
         }

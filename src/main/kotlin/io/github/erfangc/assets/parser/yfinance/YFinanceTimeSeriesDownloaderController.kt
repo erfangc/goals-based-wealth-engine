@@ -13,6 +13,6 @@ class YFinanceTimeSeriesDownloaderController(private val yFinanceTimeSeriesDownl
     fun downloadHistoryForTicker(
             @RequestParam ticker: String,
             @RequestParam(required = false) save: Boolean = false): List<TimeSeriesDatum> {
-        return yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker, save)
+        return yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker, save = save)
     }
 }
