@@ -1,4 +1,4 @@
-package io.github.erfangc.goalsengine
+package io.github.erfangc.goalsengine.portfoliochoices
 
 import io.github.erfangc.analysis.AnalysisRequest
 import io.github.erfangc.analysis.AnalysisService

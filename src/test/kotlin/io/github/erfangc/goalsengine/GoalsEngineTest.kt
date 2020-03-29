@@ -1,5 +1,6 @@
 package io.github.erfangc.goalsengine
 
+import io.github.erfangc.goalsengine.portfoliochoices.EfficientFrontier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

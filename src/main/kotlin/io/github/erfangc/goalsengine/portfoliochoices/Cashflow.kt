@@ -1,4 +1,4 @@
-package io.github.erfangc.goalsengine
+package io.github.erfangc.goalsengine.portfoliochoices
 
 /**
  * This represents a single C(t) in the vector C

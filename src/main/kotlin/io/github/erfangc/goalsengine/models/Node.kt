@@ -1,4 +1,4 @@
-package io.github.erfangc.goalsengine
+package io.github.erfangc.goalsengine.models
 
 internal data class Node(
         /**

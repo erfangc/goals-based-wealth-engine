@@ -1,4 +1,4 @@
-package io.github.erfangc.goalsengine
+package io.github.erfangc.goalsengine.models
 
 interface GoalsOptimizationOutput {
     val expectedReturn: Double

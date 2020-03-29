@@ -5,6 +5,9 @@ import io.github.erfangc.analysis.AnalysisRequest
 import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.convexoptimizer.*
 import io.github.erfangc.goalsengine.*
+import io.github.erfangc.goalsengine.models.*
+import io.github.erfangc.goalsengine.portfoliochoices.Cashflow
+import io.github.erfangc.goalsengine.portfoliochoices.PortfolioChoices
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.Portfolio

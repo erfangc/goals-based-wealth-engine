@@ -1,4 +1,4 @@
-package io.github.erfangc.goalsengine
+package io.github.erfangc.goalsengine.portfoliochoices
 
 /**
  * This interface defines a set of acceptable portfolio inputs used for goals based planning

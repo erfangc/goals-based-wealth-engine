@@ -1,5 +1,6 @@
-package io.github.erfangc.goalsengine
+package io.github.erfangc.goalsengine.models
 
+import io.github.erfangc.goalsengine.portfoliochoices.Cashflow
 import io.github.erfangc.users.settings.WhiteListItem
 
 data class EfficientFrontierBasedGoalsOptimizationRequest(
