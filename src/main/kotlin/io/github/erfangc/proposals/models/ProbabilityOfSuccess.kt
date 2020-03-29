@@ -1,6 +1,6 @@
 package io.github.erfangc.proposals.models
 
 data class ProbabilityOfSuccess(
-        val original: Double,
-        val proposed: Double
+        val original: Double? = null,
+        val proposed: Double? = null
 )

@@ -10,6 +10,7 @@ data class Analysis(
         val scenarioOutputs: List<ScenarioOutput>,
         val simulatedPerformance: List<TimeSeries>,
         val simulatedPerformanceSummaryMetrics: SummaryMetrics,
+        val probabilityOfSuccess: Double? = null,
         val expectedReturn: Double,
         val volatility: Double
 )

@@ -2,11 +2,16 @@ package io.github.erfangc.analysis
 
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
+import io.github.erfangc.goalsengine.ClientGoalsTranslatorService
+import io.github.erfangc.goalsengine.GoalsEngine
+import io.github.erfangc.goalsengine.TranslateClientGoalsRequest
+import io.github.erfangc.goalsengine.portfoliochoices.PortfolioChoices
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisResponse
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.Portfolio
+import io.github.erfangc.proposals.models.GenerateProposalRequest
 import io.github.erfangc.scenarios.ScenariosAnalysisRequest
 import io.github.erfangc.scenarios.ScenariosService
 import io.github.erfangc.simulatedperformance.SimulatedPerformanceService
@@ -19,6 +24,7 @@ import io.github.erfangc.users.UserService
 import io.github.erfangc.util.PortfolioUtils.assetIds
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.util.concurrent.Executors
 import kotlin.math.sqrt
 
 @Service
@@ -28,10 +34,41 @@ class AnalysisService(
         private val expectedReturnsService: ExpectedReturnsService,
         private val covarianceService: CovarianceService,
         private val scenariosService: ScenariosService,
-        private val userService: UserService
+        private val userService: UserService,
+        private val clientGoalsTranslatorService: ClientGoalsTranslatorService
 ) {
 
     private val log = LoggerFactory.getLogger(AnalysisService::class.java)
+
+    private fun probabilityOfSuccess(req: AnalysisRequest, analysis: Analysis): Double? {
+        val client = req.client ?: return null
+        val (goal, initialInvestment, cashflows, investmentHorizon) = clientGoalsTranslatorService
+                .translate(TranslateClientGoalsRequest(client, req.portfolios))
+        val riskReward = GoalsEngine(
+                portfolioChoices = object : PortfolioChoices {
+                    override fun mus(): List<Double> {
+                        return listOf(analysis.expectedReturn)
+                    }
+
+                    override fun sigma(mu: Double): Double {
+                        return analysis.volatility
+                    }
+
+                    override fun muMax(): Double {
+                        return analysis.expectedReturn
+                    }
+
+                    override fun muMin(): Double {
+                        return analysis.expectedReturn
+                    }
+                },
+                cashflows = cashflows,
+                initialWealth = initialInvestment,
+                goal = goal,
+                investmentHorizon = investmentHorizon
+        ).findOptimalRiskReward()
+        return riskReward.probabilityOfSuccess
+    }
 
     fun analyze(req: AnalysisRequest): AnalysisResponse {
         val user = userService.currentUser()
@@ -47,15 +84,19 @@ class AnalysisService(
         val scenarioOutputs = scenarioOutputs(req, user)
         val simulatedPerformance = simulatedPerformance(req)
 
+        val analysis = Analysis(
+                marketValueAnalysis = marketValueAnalysis,
+                expectedReturn = expectedReturn,
+                volatility = volatility,
+                scenarioOutputs = scenarioOutputs,
+                simulatedPerformance = simulatedPerformance.timeSeries,
+                simulatedPerformanceSummaryMetrics = simulatedPerformance.summaryMetrics
+        )
+
+        val probabilityOfSuccess = probabilityOfSuccess(req = req, analysis = analysis)
+
         return AnalysisResponse(
-                Analysis(
-                        marketValueAnalysis = marketValueAnalysis,
-                        expectedReturn = expectedReturn,
-                        volatility = volatility,
-                        scenarioOutputs = scenarioOutputs,
-                        simulatedPerformance = simulatedPerformance.timeSeries,
-                        simulatedPerformanceSummaryMetrics = simulatedPerformance.summaryMetrics
-                ),
+                analysis = analysis.copy(probabilityOfSuccess = probabilityOfSuccess),
                 assets = marketValueAnalysisResponse.assets
         )
     }
