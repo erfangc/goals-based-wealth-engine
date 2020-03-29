@@ -58,13 +58,11 @@ class AnalysisService(
         val (covariances, assetIndexLookup) = covarianceService.computeCovariances(assetIds(portfolios))
         val assetWeights = portfolios
                 .flatMap { portfolio ->
-                    val portfolioWeight = (marketValueAnalysis.netAssetValues[portfolio.id]
-                            ?: 0.0) / marketValueAnalysis.netAssetValue
-                    val weights = marketValueAnalysis.weights[portfolio.id]
+                    val weights = marketValueAnalysis.weightsToAllInvestments[portfolio.id]
                     portfolio.positions.map { position ->
                         val assetId = position.assetId
                         val positionId = position.id
-                        assetId to (weights?.get(positionId) ?: 0.0) * portfolioWeight
+                        assetId to (weights?.get(positionId) ?: 0.0)
                     }
                 }
                 .groupBy { it.first }
@@ -88,12 +86,10 @@ class AnalysisService(
         // compute expected returns
         val expectedReturns = expectedReturnsService.getExpectedReturns(assetIds(portfolios))
         return portfolios.sumByDouble { portfolio ->
-            val portfolioWeight = (marketValueAnalysis.netAssetValues[portfolio.id]
-                    ?: 0.0) / marketValueAnalysis.netAssetValue
-            val weights = marketValueAnalysis.weights
+            val weights = marketValueAnalysis.weightsToAllInvestments
             portfolio.positions.sumByDouble { position ->
                 val er = expectedReturns[position.assetId]?.expectedReturn ?: 0.0
-                val wt = (weights[portfolio.id]?.get(position.id) ?: 0.0) * portfolioWeight
+                val wt = (weights[portfolio.id]?.get(position.id) ?: 0.0)
                 er * wt
             }
         }

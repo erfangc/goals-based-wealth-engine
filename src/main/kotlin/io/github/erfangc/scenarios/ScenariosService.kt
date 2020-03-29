@@ -35,7 +35,7 @@ class ScenariosService(private val assetTimeSeriesService: AssetTimeSeriesServic
 
     private fun computePortfolioScenarioOutputs(req: ScenariosAnalysisRequest,
                                                 assetGainLosses: Map<String, Map<ScenarioDefinition, Double>>): List<ScenarioOutput> {
-        val (netAssetValue, netAssetValues, _, weights, _) = marketValueAnalysisService
+        val (_, _, _, _, weightsToAllInvestments, _) = marketValueAnalysisService
                 .marketValueAnalysis(MarketValueAnalysisRequest(req.portfolios))
                 .marketValueAnalysis
         return req
@@ -45,11 +45,10 @@ class ScenariosService(private val assetTimeSeriesService: AssetTimeSeriesServic
                             .portfolios
                             .flatMap { portfolio ->
                                 val portfolioId = portfolio.id
-                                val portfolioWt = netAssetValues[portfolioId]?.div(netAssetValue) ?: 0.0
                                 portfolio.positions.map { position ->
                                     val assetId = position.assetId
                                     val positionId = position.id
-                                    val weight = weights[portfolioId]?.get(positionId)?.times(portfolioWt) ?: 0.0
+                                    val weight = weightsToAllInvestments[portfolioId]?.get(positionId) ?: 0.0
                                     val gainLoss = assetGainLosses[assetId]?.get(scenarioDefinition) ?: 0.0
                                     weight * gainLoss
                                 }

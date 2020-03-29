@@ -13,8 +13,9 @@ class SimulatedPerformanceService(
         private val marketValueAnalysisService: MarketValueAnalysisService
 ) {
     fun analyze(req: SimulatedPerformanceRequest): SimulatedPerformanceResponse {
-        val (netAssetValue, netAssetValues, _, weights, _) = marketValueAnalysisService.marketValueAnalysis(MarketValueAnalysisRequest(req.portfolios)).marketValueAnalysis
-        // aggregate all the positions
+        val weights = marketValueAnalysisService
+                .marketValueAnalysis(MarketValueAnalysisRequest(req.portfolios)).marketValueAnalysis.weightsToAllInvestments
         TODO()
     }
+
 }

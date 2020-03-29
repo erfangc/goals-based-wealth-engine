@@ -13,7 +13,6 @@ import io.github.erfangc.convexoptimizer.SolutionParser.parseSolution
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
-import io.github.erfangc.users.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
@@ -139,16 +138,14 @@ class ConvexOptimizerService(
                 .map { portfolioDefinition ->
                     val portfolioId = portfolioDefinition.portfolio.id
                     val portfolioWt = (nav[portfolioId] ?: 0.0) / aggNav
-                    val weights = marketValueAnalyses.weights[portfolioId]
+                    val weights = marketValueAnalyses.weightsToAllInvestments[portfolioId]
                     val terms = ctx
                             .positionVars
                             .filter { it.portfolioId == portfolioId }
                             .map {
                                 val positionId = it.position.id
                                 val positionWt = weights?.get(positionId) ?: 0.0
-                                // original weight
-                                val originalWt = positionWt * portfolioWt
-                                ctx.cplex.sum(originalWt, it.numVar)
+                                ctx.cplex.sum(positionWt, it.numVar)
                             }
                             .toTypedArray()
                     ctx.cplex.eq(

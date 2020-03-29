@@ -5,5 +5,6 @@ data class MarketValueAnalysis(
         val netAssetValues: Map<String, Double>,
         val marketValue: Map<String, Map<String, Double>>,
         val weights: Map<String, Map<String, Double>>,
+        val weightsToAllInvestments: Map<String, Map<String, Double>>,
         val allocations: Allocations
 )
