@@ -9,20 +9,29 @@ import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import io.github.erfangc.portfolios.Portfolio
 import io.github.erfangc.scenarios.ScenariosAnalysisRequest
 import io.github.erfangc.scenarios.ScenariosService
+import io.github.erfangc.simulatedperformance.SimulatedPerformanceService
+import io.github.erfangc.simulatedperformance.models.MaximumDrawdown
+import io.github.erfangc.simulatedperformance.models.SimulatedPerformanceRequest
+import io.github.erfangc.simulatedperformance.models.SimulatedPerformanceResponse
+import io.github.erfangc.simulatedperformance.models.SummaryMetrics
 import io.github.erfangc.users.User
 import io.github.erfangc.users.UserService
 import io.github.erfangc.util.PortfolioUtils.assetIds
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import kotlin.math.sqrt
 
 @Service
 class AnalysisService(
         private val marketValueAnalysisService: MarketValueAnalysisService,
+        private val simulatedPerformanceService: SimulatedPerformanceService,
         private val expectedReturnsService: ExpectedReturnsService,
         private val covarianceService: CovarianceService,
         private val scenariosService: ScenariosService,
         private val userService: UserService
 ) {
+
+    private val log = LoggerFactory.getLogger(AnalysisService::class.java)
 
     fun analyze(req: AnalysisRequest): AnalysisResponse {
         val user = userService.currentUser()
@@ -36,17 +45,30 @@ class AnalysisService(
         val expectedReturn = expectedReturn(portfolios, marketValueAnalysis)
         val volatility = volatility(portfolios, marketValueAnalysis)
         val scenarioOutputs = scenarioOutputs(req, user)
+        val simulatedPerformance = simulatedPerformance(req)
 
         return AnalysisResponse(
                 Analysis(
                         marketValueAnalysis = marketValueAnalysis,
                         expectedReturn = expectedReturn,
                         volatility = volatility,
-                        scenarioOutputs = scenarioOutputs
+                        scenarioOutputs = scenarioOutputs,
+                        simulatedPerformance = simulatedPerformance.timeSeries,
+                        simulatedPerformanceSummaryMetrics = simulatedPerformance.summaryMetrics
                 ),
                 assets = marketValueAnalysisResponse.assets
         )
     }
+
+    private fun simulatedPerformance(req: AnalysisRequest): SimulatedPerformanceResponse {
+        return try {
+            simulatedPerformanceService.analyze(SimulatedPerformanceRequest(req.portfolios))
+        } catch (e: Exception) {
+            log.error("Unable to compute simulated performance", e)
+            SimulatedPerformanceResponse(timeSeries = emptyList(), summaryMetrics = SummaryMetrics(MaximumDrawdown()))
+        }
+    }
+
 
     private fun scenarioOutputs(req: AnalysisRequest, user: User) =
             scenariosService.scenariosAnalysis(ScenariosAnalysisRequest(req.portfolios, user.settings.scenarioDefinitions)).scenarioOutputs

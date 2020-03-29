@@ -6,6 +6,7 @@ data class Analyses(
         val weights: Weights,
         val allocations: GenerateProposalResponseAllocations,
         val expectedReturns: ExpectedReturns,
+        val simulatedPerformances: SimulatedPerformances,
         val volatility: Volatility,
         val scenarioOutputs: ScenarioOutputs,
         val probabilityOfSuccess: ProbabilityOfSuccess

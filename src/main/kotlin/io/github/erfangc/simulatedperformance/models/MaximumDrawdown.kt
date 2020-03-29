@@ -1,3 +1,9 @@
 package io.github.erfangc.simulatedperformance.models
 
-data class MaximumDrawdown(val value: Double, val start: String, val stop: String)
+import java.time.LocalDate
+
+data class MaximumDrawdown(
+        val value: Double = 0.0,
+        val start: String = LocalDate.MIN.toString(),
+        val stop: String = LocalDate.MAX.toString()
+)

@@ -169,6 +169,10 @@ class ProposalsService(
                         scenarioOutputs = ScenarioOutputs(
                                 original = oAnalysis.scenarioOutputs,
                                 proposed = pAnalysis.scenarioOutputs
+                        ),
+                        simulatedPerformances = SimulatedPerformances(
+                                original = SimulatedPerformance(oAnalysis.simulatedPerformance, oAnalysis.simulatedPerformanceSummaryMetrics),
+                                proposed = SimulatedPerformance(pAnalysis.simulatedPerformance, pAnalysis.simulatedPerformanceSummaryMetrics)
                         )
                 ),
                 assets = proposedAnalysisResponse.assets

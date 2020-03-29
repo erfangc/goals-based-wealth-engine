@@ -54,7 +54,7 @@ class SimulatedPerformanceService(
         val stop = DateUtils.mostRecentMonthEnd()
         val start = stop.minusYears(30)
         val assetIds = assetIds(request.portfolios)
-        val assetReturns = assetReturns(assetIds, start, stop)
+        val assetReturns = assetReturns(assetIds - "USD", start, stop)
 
         val minDate = assetReturns.keys.min() ?: error("")
         val maxDate = assetReturns.keys.max() ?: error("")
@@ -106,7 +106,7 @@ class SimulatedPerformanceService(
                 .groupBy { LocalDate.parse(it.date) }
         val minDate = groupBy.filter { it.value.size == assetIds.size }.keys.min()
         return groupBy
-                .filter { it.key.isAfter(minDate) || it.key.equals(minDate) }
+                .filter { it.key.isAfter(minDate) || it.key == minDate }
                 .mapValues { entry -> entry.value.associateBy { it.assetId } }
     }
 
