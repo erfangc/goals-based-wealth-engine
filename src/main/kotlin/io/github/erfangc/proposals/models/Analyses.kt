@@ -5,7 +5,7 @@ data class Analyses(
         val marketValue: MarketValue,
         val weights: Weights,
         val allocations: GenerateProposalResponseAllocations,
-        val expectedReturn: ExpectedReturn,
+        val expectedReturns: ExpectedReturns,
         val volatility: Volatility,
         val scenarioOutputs: ScenarioOutputs,
         val probabilityOfSuccess: ProbabilityOfSuccess

@@ -95,7 +95,7 @@ class ExpectedReturnsService(
      *
      * @return a Map whose keys are assetIds and the values are expected returns for the asset
      */
-    fun getExpectedReturns(assetIds: List<String>): Map<String, Double> {
+    fun getExpectedReturns(assetIds: List<String>): Map<String, ExpectedReturn> {
 
         // first find the monthly return time series for our asset
         // we take the past 5 years or 60 observations, filter out dates where all
@@ -141,7 +141,8 @@ class ExpectedReturnsService(
         return assetIds.filter { it != "USD" }.map { assetId ->
             val asset = assets[assetId]
             if (asset?.assetClass == "Bond") {
-                assetId to (asset.yield?.div(100.0) ?: 0.0)
+                val `yield` = asset.yield?.div(100.0) ?: 0.0
+                assetId to (ExpectedReturn(expectedReturn = `yield`, `yield` = `yield`))
             } else {
                 val monthlyReturns = monthlySeries[assetId]
                         ?: throw IllegalStateException("cannot find monthly returns for $assetId")
@@ -152,9 +153,9 @@ class ExpectedReturnsService(
                 // note the idx + 1, OLS estimate parameters makes the 1st parameter the intercept
                 val mu = averages.mapIndexed { idx, average -> betas[idx + 1] * average }.sum()
                 // expected returns must be annualized
-                assetId to mu * 12
+                assetId to ExpectedReturn(expectedReturn = mu * 12, marketSensitivity = betas[1], smb = betas[2], hml = betas[3])
             }
-        }.toMap() + ("USD" to 0.0)
+        }.toMap() + ("USD" to ExpectedReturn(expectedReturn =  0.0))
     }
 
 }

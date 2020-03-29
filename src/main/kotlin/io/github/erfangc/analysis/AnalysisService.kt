@@ -92,7 +92,7 @@ class AnalysisService(
                     ?: 0.0) / marketValueAnalysis.netAssetValue
             val weights = marketValueAnalysis.weights
             portfolio.positions.sumByDouble { position ->
-                val er = expectedReturns[position.assetId] ?: 0.0
+                val er = expectedReturns[position.assetId]?.expectedReturn ?: 0.0
                 val wt = (weights[portfolio.id]?.get(position.id) ?: 0.0) * portfolioWeight
                 er * wt
             }

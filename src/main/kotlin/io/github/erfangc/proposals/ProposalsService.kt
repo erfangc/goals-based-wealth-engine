@@ -138,7 +138,7 @@ class ProposalsService(
                 proposal = proposal,
                 proposedPortfolios = optimizationResponse.proposedPortfolios,
                 analyses = Analyses(
-                        expectedReturn = ExpectedReturn(
+                        expectedReturns = ExpectedReturns(
                                 original = oAnalysis.expectedReturn,
                                 proposed = pAnalysis.expectedReturn
                         ),

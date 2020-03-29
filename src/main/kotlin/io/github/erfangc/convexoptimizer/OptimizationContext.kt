@@ -3,6 +3,7 @@ package io.github.erfangc.convexoptimizer
 import ilog.concert.IloNumVar
 import ilog.cplex.IloCplex
 import io.github.erfangc.assets.Asset
+import io.github.erfangc.expectedreturns.ExpectedReturn
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
 
 data class OptimizationContext(
@@ -13,7 +14,7 @@ data class OptimizationContext(
         val assetVars: Map<String, IloNumVar>,
         val portfolioDefinitions: List<PortfolioDefinition>,
         val positionVars: List<PositionVar>,
-        val expectedReturns: Map<String, Double>,
+        val expectedReturns: Map<String, ExpectedReturn>,
         val marketValueAnalyses: MarketValueAnalysis,
         val aggregateNav: Double
 )

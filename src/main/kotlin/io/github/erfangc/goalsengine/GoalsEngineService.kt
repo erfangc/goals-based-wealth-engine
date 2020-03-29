@@ -82,7 +82,7 @@ class GoalsEngineService(
         val lookup = covariances.assetIndexLookup.map { it.value to it.key }.toMap()
         val expectedReturns = expectedReturnsService.getExpectedReturns(assetIds)
         return covariances.covariances.indices.map { idx ->
-            expectedReturns[lookup[idx]] ?: 0.0
+            expectedReturns[lookup[idx]]?.expectedReturn ?: 0.0
         }.toDoubleArray()
     }
 

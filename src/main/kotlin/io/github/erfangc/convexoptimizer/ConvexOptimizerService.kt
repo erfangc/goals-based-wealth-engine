@@ -26,8 +26,7 @@ class ConvexOptimizerService(
         private val analysisService: AnalysisService,
         private val expectedReturnsService: ExpectedReturnsService,
         covarianceService: CovarianceService,
-        private val assetService: AssetService,
-        private val userService: UserService
+        private val assetService: AssetService
 ) {
 
     private val log = LoggerFactory.getLogger(ConvexOptimizerService::class.java)
@@ -176,7 +175,7 @@ class ConvexOptimizerService(
         val returnExpr = ctx.assetIds.map { assetId ->
             val assetVar = ctx.assetVars[assetId] ?: error("")
             val expectedReturn = ctx.expectedReturns[assetId] ?: error("")
-            cplex.prod(assetVar, expectedReturn)
+            cplex.prod(assetVar, expectedReturn.expectedReturn)
         }.toTypedArray()
         return cplex.sum(returnExpr)
     }

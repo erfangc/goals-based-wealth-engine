@@ -52,7 +52,6 @@ internal class ProposalsServiceTest {
                 analysisService = analysisService,
                 assetService = assetService,
                 covarianceService = covarianceService,
-                userService = userService,
                 expectedReturnsService = expectedReturnsService
         )
         val jdbcTemplate = mockk<NamedParameterJdbcTemplate>()
