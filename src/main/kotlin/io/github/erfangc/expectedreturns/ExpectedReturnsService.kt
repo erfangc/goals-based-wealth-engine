@@ -8,6 +8,7 @@ import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 
@@ -19,10 +20,12 @@ class ExpectedReturnsService(
 
     internal data class FactorLevel(val name: String, val date: LocalDate, val value: Double)
 
-    private val formatter = DateTimeFormatterBuilder()
-            .appendPattern("yyyyMM")
-            .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
-            .toFormatter()
+    companion object {
+        val formatter: DateTimeFormatter = DateTimeFormatterBuilder()
+                .appendPattern("yyyyMM")
+                .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
+                .toFormatter()!!
+    }
 
     /**
      * Statically load the French Fama factors so we can quickly regress them
@@ -155,7 +158,7 @@ class ExpectedReturnsService(
                 // expected returns must be annualized
                 assetId to ExpectedReturn(expectedReturn = mu * 12, marketSensitivity = betas[1], smb = betas[2], hml = betas[3])
             }
-        }.toMap() + ("USD" to ExpectedReturn(expectedReturn =  0.0))
+        }.toMap() + ("USD" to ExpectedReturn(expectedReturn = 0.0))
     }
 
 }

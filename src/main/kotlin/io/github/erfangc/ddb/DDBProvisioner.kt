@@ -27,6 +27,11 @@ class DDBProvisioner(private val ddb: AmazonDynamoDB) {
                 hashAttrName = "assetId",
                 rangeAttrName = "date"
         )
+        createTableWithHashAndRangeKey(
+                tableName = "factor-set-levels",
+                hashAttrName = "id",
+                rangeAttrName = "date"
+        )
 
         //
         // create tables to hold client / portfolios and users etc.
