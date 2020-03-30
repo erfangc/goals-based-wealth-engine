@@ -1,60 +1,56 @@
 package io.github.erfangc.clients
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
+import com.amazonaws.services.dynamodbv2.model.AttributeValue
+import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException
 import io.github.erfangc.clients.models.Client
+import io.github.erfangc.common.DynamoDBUtil.fromItem
+import io.github.erfangc.common.DynamoDBUtil.toItem
 import io.github.erfangc.users.UserService
-import org.springframework.dao.EmptyResultDataAccessException
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Service
 
 @Service
-class ClientService(
-        private val jdbcTemplate: NamedParameterJdbcTemplate,
-        private val objectMapper: ObjectMapper,
-        private val userService: UserService
-) {
+class ClientService(private val ddb: AmazonDynamoDB, private val userService: UserService) {
+
     fun getClients(): List<Client> {
-        val userId = userService.currentUser().id
-        return jdbcTemplate
-                .queryForList("SELECT * FROM clients WHERE userId = :userId", mapOf("userId" to userId))
-                .map {
-                    row -> objectMapper.readValue<Client>(row["json"].toString())
-                }
+        val user = userService.currentUser()
+        return user.clientIds.chunked(25).flatMap { chunk ->
+            val items = ddb.batchGetItem(
+                    mapOf("clients" to
+                            KeysAndAttributes().withKeys(chunk.map { clientId -> mapOf("id" to AttributeValue(clientId)) }))
+            ).responses["clients"]
+            items?.map { item -> fromItem<Client>(item) } ?: emptyList()
+        }
     }
 
     fun getClient(id: String): Client? {
-        val userId = userService.currentUser().id
-        try {
-            val row = jdbcTemplate.queryForMap("SELECT * FROM clients WHERE id = :id AND userId = :userId", mapOf("id" to id, "userId" to userId))
-            return objectMapper.readValue(row["json"].toString())
-        } catch (e: EmptyResultDataAccessException) {
-            throw RuntimeException("cannot to find client $id", e)
+        val user = userService.currentUser()
+        val notFoundException = RuntimeException("Unable to find client $id")
+        val clientId = user.clientIds.find { it == id } ?: throw notFoundException
+        return try {
+            fromItem<Client>(ddb.getItem("clients", mapOf("id" to AttributeValue(clientId))).item)
+        } catch (e: ResourceNotFoundException) {
+            throw notFoundException
         }
     }
 
     fun saveClient(client: Client): Client {
-        val userId = userService.currentUser().id
-        val json = objectMapper.writeValueAsString(client)
-        val updateSql = """
-            INSERT INTO clients (id, userId, json)
-            VALUES (:id, :userId, CAST(:json AS json))
-            ON CONFLICT (id, userId)
-            DO
-            UPDATE
-            SET userId = :userId, json = CAST(:json as json)
-        """.trimIndent()
-        jdbcTemplate.update(updateSql, mapOf("id" to client.id, "userId" to userId, "json" to json))
+        val user = userService.currentUser()
+        // save the client object itself
+        val oldAttributes = ddb.putItem("clients", toItem(client), "ALL_OLD").attributes
+        if (oldAttributes == null || !oldAttributes.containsKey("id")) {
+            // if this is a new client object, save it to the user object
+            userService.saveUser(user.copy(clientIds = user.clientIds + client.id))
+        }
         return client
     }
 
     fun deleteClient(id: String): Client? {
-        val userId = userService.currentUser().id
-        val client = getClient(id)
-        jdbcTemplate.update(
-                "DELETE FROM clients WHERE id = :id AND userId = :userId",
-                mapOf("id" to id, "userId" to userId)
-        )
-        return client
+        val user = userService.currentUser()
+        ddb.deleteItem("clients", mapOf("id" to AttributeValue(id)), "ALL_OLD")
+        userService.saveUser(user.copy(clientIds = user.clientIds.filter { it != id }))
+        return getClient(id)
     }
+    
 }

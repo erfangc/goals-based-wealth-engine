@@ -27,14 +27,11 @@ object AccessTokenProvider {
 
     fun signAccessTokenFor(user: User): String {
         val now = Instant.now()
-        val issuer = "www.wealth-engine.com"
         return Jwts
                 .builder()
                 .setSubject(user.id)
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(now.plusMillis(TimeUnit.MILLISECONDS.convert(36L, TimeUnit.HOURS))))
-                .setIssuer(issuer)
-                .setAudience(issuer)
                 .setId(UUID.randomUUID().toString())
                 .signWith(key)
                 .compact()

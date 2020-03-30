@@ -1,20 +1,21 @@
 package io.github.erfangc.users
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
+import com.amazonaws.services.dynamodbv2.model.AttributeValue
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest
+import io.github.erfangc.common.DynamoDBUtil.fromItem
+import io.github.erfangc.common.DynamoDBUtil.toItem
 import io.github.erfangc.users.internal.AccessTokenProvider.signAccessTokenFor
 import io.github.erfangc.users.models.*
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 
 
 @Service
-class UserService(private val jdbcTemplate: NamedParameterJdbcTemplate,
-                  private val objectMapper: ObjectMapper) {
+class UserService(private val ddb: AmazonDynamoDB) {
 
     private val log = LoggerFactory.getLogger(UserService::class.java)
 
@@ -29,32 +30,21 @@ class UserService(private val jdbcTemplate: NamedParameterJdbcTemplate,
     }
 
     fun saveUser(user: User): User {
-        val json = objectMapper.writeValueAsString(user)
-        val updateSql = """
-            UPDATE users
-            SET
-                json = CAST(:json AS json)
-            WHERE
-                id = :id
-        """.trimIndent()
-        jdbcTemplate.update(
-                updateSql,
-                mapOf("id" to user.id, "json" to json)
-        )
+        ddb.putItem("users", toItem(user))
         return user
     }
 
     fun getUser(id: String): User {
-        val row = jdbcTemplate.queryForMap("select * from users where id = :id", mapOf("id" to id))
-        return objectMapper.readValue<User>(row["json"].toString())
+        val item = ddb.getItem("users", mapOf("id" to AttributeValue(id))).item
+        return fromItem(item)
     }
 
     fun signIn(req: SignInRequest): SignInResponse {
-        val candidate = req.password?: error("password cannot be blank")
-        val email = req.email?: error("password cannot be blank")
+        val candidate = req.password ?: error("password cannot be blank")
+        val email = req.email ?: error("password cannot be blank")
         try {
-            val row = jdbcTemplate.queryForMap("select * from users where id = :email", mapOf("email" to email))
-            val password = row["password"].toString()
+            val getItemRequest = GetItemRequest("users", mapOf("id" to AttributeValue(email))).withAttributesToGet("password")
+            val password = ddb.getItem(getItemRequest).item["password"]?.s
             if (BCrypt.checkpw(candidate, password)) {
                 val user = getUser(req.email)
                 return SignInResponse(accessToken = signAccessTokenFor(user))
@@ -76,16 +66,12 @@ class UserService(private val jdbcTemplate: NamedParameterJdbcTemplate,
                 firstName = req.firstName,
                 lastName = req.lastName
         )
-        val json = objectMapper.writeValueAsString(user)
-        val updateSql = """
-            INSERT INTO users (id, password, json)
-            VALUES (:id, :password, CAST(:json AS json))
-        """.trimIndent()
-        jdbcTemplate.update(
-                updateSql,
-                mapOf("id" to email, "id" to email, "password" to hashedPassword, "json" to json)
+        val item = toItem(user)
+        ddb.putItem(
+                "users",
+                (item.entries.map { entry -> entry.key to entry.value }
+                        + ("password" to AttributeValue(hashedPassword))).toMap()
         )
-        log.info("Signed up user $email")
         return SignUpResponse(user = user)
     }
 

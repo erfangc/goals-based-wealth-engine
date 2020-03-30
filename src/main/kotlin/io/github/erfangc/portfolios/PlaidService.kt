@@ -7,6 +7,7 @@ import com.plaid.client.request.ItemPublicTokenExchangeRequest
 import com.plaid.client.response.InvestmentsHoldingsGetResponse
 import io.github.erfangc.portfolios.models.LinkItemResponse
 import io.github.erfangc.portfolios.models.Portfolio
+import io.github.erfangc.portfolios.models.SavePortfolioRequest
 import io.github.erfangc.portfolios.models.Source
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -73,7 +74,7 @@ class PlaidService(private val plaidClient: PlaidClient,
                 }
 
         updatedPortfolios.forEach { portfolio ->
-            portfolioService.savePortfolio(portfolio)
+            portfolioService.savePortfolio(clientId, SavePortfolioRequest(portfolio))
         }
 
         return LinkItemResponse(updatedPortfolios)
@@ -84,9 +85,10 @@ class PlaidService(private val plaidClient: PlaidClient,
 
     private fun portfolios(clientId: String): Map<String?, Portfolio> {
         return portfolioService
-                .getForClientId(clientId)
-                ?.filter { it.source?.itemId != null }
-                ?.associateBy { it.source?.accountId } ?: emptyMap()
+                .getPortfoliosForClient(clientId)
+                .portfolios
+                .filter { it.source?.itemId != null }
+                .associateBy { it.source?.accountId }
     }
 
     private fun accessToken(publicToken: String): String {

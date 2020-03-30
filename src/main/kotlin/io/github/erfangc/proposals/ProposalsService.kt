@@ -5,13 +5,9 @@ import io.github.erfangc.convexoptimizer.ConvexOptimizerService
 import io.github.erfangc.convexoptimizer.models.*
 import io.github.erfangc.goalsengine.ClientGoalsTranslatorService
 import io.github.erfangc.goalsengine.GoalsEngineService
-import io.github.erfangc.goalsengine.models.TranslateClientGoalsRequest
-import io.github.erfangc.goalsengine.models.EfficientFrontierBasedGoalsOptimizationRequest
-import io.github.erfangc.goalsengine.models.EfficientFrontierBasedGoalsOptimizationResponse
-import io.github.erfangc.goalsengine.models.ModelPortfolioBasedGoalsOptimizationRequest
-import io.github.erfangc.goalsengine.models.ModelPortfolioBasedGoalsOptimizationResponse
-import io.github.erfangc.portfolios.models.Portfolio
+import io.github.erfangc.goalsengine.models.*
 import io.github.erfangc.portfolios.PortfolioService
+import io.github.erfangc.portfolios.models.Portfolio
 import io.github.erfangc.portfolios.models.Position
 import io.github.erfangc.proposals.internal.WhiteListResolver
 import io.github.erfangc.proposals.models.*
@@ -209,8 +205,9 @@ class ProposalsService(
         val whiteListResolver = WhiteListResolver(userService)
 
         val existingDefinitions = portfolioService
-                .getForClientId(req.client.id)
-                ?.map { portfolio ->
+                .getPortfoliosForClient(req.client.id)
+                .portfolios
+                .map { portfolio ->
                     val withdrawRestricted = listOf("ira", "401k").contains(portfolio.source?.subType)
                     val whiteListItems = whiteListResolver.resolveWhiteListItems(ResolveWhiteListItemRequest(portfolio, modelPortfolio)).whiteListItems
                     PortfolioDefinition(
@@ -237,7 +234,7 @@ class ProposalsService(
                     null
                 }
         )
-        val ret = ((existingDefinitions ?: emptyList()) + newPortfolio)
+        val ret = (existingDefinitions + newPortfolio)
                 // get rid of any portfolios that might not have a position
                 .filter { it.portfolio.positions.isNotEmpty() }
         if (ret.isEmpty()) {
