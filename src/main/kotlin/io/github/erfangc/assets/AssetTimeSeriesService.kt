@@ -5,7 +5,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator
 import com.amazonaws.services.dynamodbv2.model.Condition
 import com.amazonaws.services.dynamodbv2.model.QueryRequest
-import io.github.erfangc.util.DynamoDBUtil.fromItem
+import io.github.erfangc.ddb.DynamoDBUtil.fromItem
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.time.LocalDate

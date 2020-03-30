@@ -22,7 +22,12 @@ class ProposalAnalysisService(private val analysisService: AnalysisService) {
 
         val assets = (originalAnalysisResponse.assets.keys + proposedAnalysisResponse.assets.keys)
                 .distinct()
-                .map { assetId -> assetId to (originalAnalysisResponse.assets[assetId] ?: proposedAnalysisResponse.assets[assetId] ?: error("")) }
+                .map { assetId ->
+                    val asset = originalAnalysisResponse.assets[assetId]
+                            ?: proposedAnalysisResponse.assets[assetId]
+                            ?: error("")
+                    assetId to asset
+                }
                 .toMap()
 
         return AnalyzeProposalResponse(

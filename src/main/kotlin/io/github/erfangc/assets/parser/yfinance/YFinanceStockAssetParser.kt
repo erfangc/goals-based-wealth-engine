@@ -8,7 +8,7 @@ import io.github.erfangc.assets.Asset
 import io.github.erfangc.assets.AssetClassAllocation
 import io.github.erfangc.assets.GicsAllocation
 import io.github.erfangc.assets.parser.ParserUtil.parsePreviousClose
-import io.github.erfangc.util.DynamoDBUtil
+import io.github.erfangc.ddb.DynamoDBUtil
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service

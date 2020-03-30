@@ -6,7 +6,7 @@ import com.amazonaws.services.dynamodbv2.model.WriteRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.erfangc.assets.Field
 import io.github.erfangc.assets.TimeSeriesDatum
-import io.github.erfangc.util.DynamoDBUtil.toItem
+import io.github.erfangc.ddb.DynamoDBUtil.toItem
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpGet
 import org.slf4j.LoggerFactory

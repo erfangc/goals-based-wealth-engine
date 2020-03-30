@@ -4,7 +4,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import io.github.erfangc.assets.*
 import io.github.erfangc.assets.parser.ParserUtil.parsePercentage
 import io.github.erfangc.assets.parser.ParserUtil.parsePreviousClose
-import io.github.erfangc.util.DynamoDBUtil.toItem
+import io.github.erfangc.ddb.DynamoDBUtil.toItem
 import org.jsoup.Jsoup
 import org.jsoup.select.Elements
 import org.slf4j.LoggerFactory

@@ -1,4 +1,4 @@
-package io.github.erfangc.util
+package io.github.erfangc.ddb
 
 import com.amazonaws.services.dynamodbv2.document.Item
 import com.amazonaws.services.dynamodbv2.document.ItemUtils
@@ -12,7 +12,7 @@ object DynamoDBUtil {
             .findAndRegisterModules()
     inline fun <reified T> fromItem(item: Map<String, AttributeValue>): T {
         val json = ItemUtils.toItem(item).toJSON()
-        return this.objectMapper.readValue(json)
+        return objectMapper.readValue(json)
     }
     fun toItem(t: Any): Map<String, AttributeValue> {
         val json = objectMapper.writeValueAsString(t)

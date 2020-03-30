@@ -8,6 +8,7 @@ data class User(
         val lastName: String,
         val email: String,
         val settings: Settings = Settings(),
+        val clientIds: List<String> = emptyList(),
         val address: String? = null,
         val firmName: String? = null
 )
