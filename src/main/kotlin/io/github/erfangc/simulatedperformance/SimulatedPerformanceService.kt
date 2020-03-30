@@ -2,12 +2,12 @@ package io.github.erfangc.simulatedperformance
 
 import io.github.erfangc.assets.AssetTimeSeriesService
 import io.github.erfangc.assets.models.TimeSeriesDatum
-import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysisRequest
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
-import io.github.erfangc.simulatedperformance.models.*
 import io.github.erfangc.common.DateUtils
 import io.github.erfangc.common.DateUtils.months
 import io.github.erfangc.common.PortfolioUtils.assetIds
+import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
+import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysisRequest
+import io.github.erfangc.simulatedperformance.models.*
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -56,7 +56,7 @@ class SimulatedPerformanceService(
         val assetIds = assetIds(request.portfolios)
         val assetReturns = assetReturns(assetIds - "USD", start, stop)
 
-        val minDate = assetReturns.keys.min() ?: error("")
+        val minDate = assetReturns.keys.min() ?: return SimulatedPerformanceResponse()
         val maxDate = assetReturns.keys.max() ?: error("")
 
         val ctx = Context(

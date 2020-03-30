@@ -1,6 +1,6 @@
 package io.github.erfangc.simulatedperformance.models
 
 data class SimulatedPerformanceResponse(
-        val timeSeries: List<TimeSeries>,
-        val summaryMetrics: SummaryMetrics
+        val timeSeries: List<TimeSeries> = emptyList(),
+        val summaryMetrics: SummaryMetrics = SummaryMetrics()
 )
