@@ -24,7 +24,6 @@ import java.util.*
 class ProposalsService(
         private val userService: UserService,
         private val proposalAnalysisService: ProposalAnalysisService,
-        private val proposalCrudService: ProposalCrudService,
         private val goalsEngineService: GoalsEngineService,
         private val portfolioService: PortfolioService,
         private val clientGoalsTranslatorService: ClientGoalsTranslatorService,
@@ -39,7 +38,7 @@ class ProposalsService(
      * The proposal workflow have a few possible steps it might take:
      *
      *  1 - if the client has not been assigned a model portfolio, and that model portfolio assignment is not enabled
-     *  the efficient frontier will be used to determine optimal allocat
+     *  the efficient frontier will be used to determine optimal allocation
      */
     fun generateProposal(req: GenerateProposalRequest): GenerateProposalResponse {
 
@@ -84,10 +83,6 @@ class ProposalsService(
                 portfolios = portfolios,
                 proposedOrders = optimizationResponse.proposedOrders
         )
-
-        if (req.save) {
-            proposalCrudService.saveProposal(proposal)
-        }
 
         return doPostOptimizationsAnalysis(proposal, req.client)
     }

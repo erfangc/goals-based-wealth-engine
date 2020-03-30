@@ -4,6 +4,5 @@ import io.github.erfangc.clients.Client
 
 data class GenerateProposalRequest(
         val client: Client,
-        val newInvestment: Double? = null,
-        val save: Boolean = false
+        val newInvestment: Double? = null
 )

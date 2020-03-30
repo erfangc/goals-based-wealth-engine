@@ -50,11 +50,6 @@ class YFinanceFundAssetParser(private val ddb: AmazonDynamoDB) {
                 .evaluate(profile)
                 .elements)
 
-        val fundOperations = parseTable(Xsoup
-                .compile("//*[@id=\"Col1-0-Profile-Proxy\"]/section/div[2]/div[2]")
-                .evaluate(profile)
-                .elements, 1)
-
         val feesAndExpenses = parseTable(Xsoup
                 .compile("//*[@id=\"Col1-0-Profile-Proxy\"]/section/div[2]/div[3]")
                 .evaluate(profile)
