@@ -4,8 +4,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest
-import io.github.erfangc.ddb.DynamoDBUtil.fromItem
-import io.github.erfangc.ddb.DynamoDBUtil.toItem
+import io.github.erfangc.assets.models.Asset
+import io.github.erfangc.common.DynamoDBUtil.fromItem
+import io.github.erfangc.common.DynamoDBUtil.toItem
 import org.springframework.stereotype.Service
 
 @Service

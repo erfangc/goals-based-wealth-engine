@@ -1,7 +1,6 @@
 package io.github.erfangc.goalsengine.models
 
-import io.github.erfangc.goalsengine.portfoliochoices.Cashflow
-import io.github.erfangc.users.settings.ModelPortfolio
+import io.github.erfangc.users.models.ModelPortfolio
 
 data class ModelPortfolioBasedGoalsOptimizationRequest(
         val initialWealth: Double,

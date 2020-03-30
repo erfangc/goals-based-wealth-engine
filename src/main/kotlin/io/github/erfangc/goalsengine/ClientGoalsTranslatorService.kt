@@ -1,7 +1,9 @@
 package io.github.erfangc.goalsengine
 
-import io.github.erfangc.goalsengine.portfoliochoices.Cashflow
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
+import io.github.erfangc.goalsengine.models.Cashflow
+import io.github.erfangc.goalsengine.models.TranslateClientGoalsRequest
+import io.github.erfangc.goalsengine.models.TranslateClientGoalsResponse
+import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
 import org.springframework.stereotype.Service
 import java.time.LocalDate

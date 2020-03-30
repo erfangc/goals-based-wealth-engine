@@ -2,8 +2,9 @@ package io.github.erfangc.expectedreturns
 
 import io.github.erfangc.assets.AssetService
 import io.github.erfangc.assets.AssetTimeSeriesService
-import io.github.erfangc.util.DateUtils.months
-import io.github.erfangc.util.DateUtils.mostRecentMonthEnd
+import io.github.erfangc.common.DateUtils.months
+import io.github.erfangc.common.DateUtils.mostRecentMonthEnd
+import io.github.erfangc.expectedreturns.models.ExpectedReturn
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service

@@ -1,15 +1,16 @@
 package io.github.erfangc.goalsengine
 
 import io.github.erfangc.analysis.AnalysisService
-import io.github.erfangc.covariance.ComputeCovariancesResponse
+import io.github.erfangc.covariance.models.ComputeCovariancesResponse
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
+import io.github.erfangc.goalsengine.internal.GoalsEngine
 import io.github.erfangc.goalsengine.models.EfficientFrontierBasedGoalsOptimizationRequest
 import io.github.erfangc.goalsengine.models.EfficientFrontierBasedGoalsOptimizationResponse
 import io.github.erfangc.goalsengine.models.ModelPortfolioBasedGoalsOptimizationRequest
 import io.github.erfangc.goalsengine.models.ModelPortfolioBasedGoalsOptimizationResponse
-import io.github.erfangc.goalsengine.portfoliochoices.EfficientFrontier
-import io.github.erfangc.goalsengine.portfoliochoices.ModelPortfolioChoices
+import io.github.erfangc.goalsengine.models.EfficientFrontier
+import io.github.erfangc.goalsengine.models.ModelPortfolioChoices
 import org.springframework.stereotype.Service
 
 @Service

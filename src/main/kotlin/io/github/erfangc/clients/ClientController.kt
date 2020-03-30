@@ -1,5 +1,6 @@
 package io.github.erfangc.clients
 
+import io.github.erfangc.clients.models.Client
 import org.springframework.web.bind.annotation.*
 
 @RestController

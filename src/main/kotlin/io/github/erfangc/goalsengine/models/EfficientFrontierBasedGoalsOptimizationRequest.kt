@@ -1,7 +1,6 @@
 package io.github.erfangc.goalsengine.models
 
-import io.github.erfangc.goalsengine.portfoliochoices.Cashflow
-import io.github.erfangc.users.settings.WhiteListItem
+import io.github.erfangc.users.models.WhiteListItem
 
 data class EfficientFrontierBasedGoalsOptimizationRequest(
         val initialWealth: Double,

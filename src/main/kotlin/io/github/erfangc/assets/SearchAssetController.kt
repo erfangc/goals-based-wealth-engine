@@ -1,5 +1,6 @@
 package io.github.erfangc.assets
 
+import io.github.erfangc.assets.models.Asset
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam

@@ -1,5 +1,6 @@
 package io.github.erfangc.covariance
 
+import io.github.erfangc.covariance.models.ComputeCovariancesResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam

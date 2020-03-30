@@ -1,7 +1,7 @@
 package io.github.erfangc.proposals.models
 
-import io.github.erfangc.assets.Asset
-import io.github.erfangc.portfolios.Portfolio
+import io.github.erfangc.assets.models.Asset
+import io.github.erfangc.portfolios.models.Portfolio
 
 data class GenerateProposalResponse(
         val proposal: Proposal,

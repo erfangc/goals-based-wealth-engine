@@ -1,6 +1,7 @@
 package io.github.erfangc.scenarios
 
-import io.github.erfangc.assets.parser.yfinance.YFinanceTimeSeriesDownloader
+import io.github.erfangc.assets.yfinance.YFinanceTimeSeriesDownloader
+import io.github.erfangc.scenarios.models.TimeSeriesDefinition
 import org.springframework.stereotype.Service
 
 @Service

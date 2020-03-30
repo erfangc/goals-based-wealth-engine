@@ -1,7 +1,8 @@
 package io.github.erfangc.covariance
 
 import io.github.erfangc.assets.AssetTimeSeriesService
-import io.github.erfangc.util.DateUtils.months
+import io.github.erfangc.covariance.models.ComputeCovariancesResponse
+import io.github.erfangc.common.DateUtils.months
 import org.apache.commons.math3.stat.correlation.Covariance
 import org.springframework.stereotype.Service
 import java.time.LocalDate

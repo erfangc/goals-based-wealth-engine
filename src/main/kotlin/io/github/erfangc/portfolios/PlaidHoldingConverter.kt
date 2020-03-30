@@ -2,6 +2,7 @@ package io.github.erfangc.portfolios
 
 import com.plaid.client.response.InvestmentsHoldingsGetResponse
 import io.github.erfangc.assets.AssetService
+import io.github.erfangc.portfolios.models.Position
 import org.slf4j.LoggerFactory
 
 class PlaidHoldingConverter constructor(

@@ -2,7 +2,8 @@ package io.github.erfangc.users
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.github.erfangc.users.AccessTokenProvider.signAccessTokenFor
+import io.github.erfangc.users.internal.AccessTokenProvider.signAccessTokenFor
+import io.github.erfangc.users.models.*
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate

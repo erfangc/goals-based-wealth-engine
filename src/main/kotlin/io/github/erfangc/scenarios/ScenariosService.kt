@@ -1,12 +1,13 @@
 package io.github.erfangc.scenarios
 
 import io.github.erfangc.assets.AssetTimeSeriesService
-import io.github.erfangc.assets.TimeSeriesDatum
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
+import io.github.erfangc.assets.models.TimeSeriesDatum
+import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysisRequest
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
-import io.github.erfangc.util.DateUtils.months
-import io.github.erfangc.util.DateUtils.mostRecentMonthEnd
-import io.github.erfangc.util.PortfolioUtils.assetIds
+import io.github.erfangc.common.DateUtils.months
+import io.github.erfangc.common.DateUtils.mostRecentMonthEnd
+import io.github.erfangc.common.PortfolioUtils.assetIds
+import io.github.erfangc.scenarios.models.*
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
 import org.springframework.stereotype.Service
 import java.time.LocalDate

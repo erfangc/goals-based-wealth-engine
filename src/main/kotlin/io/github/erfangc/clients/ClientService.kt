@@ -2,6 +2,7 @@ package io.github.erfangc.clients
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.erfangc.clients.models.Client
 import io.github.erfangc.users.UserService
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate

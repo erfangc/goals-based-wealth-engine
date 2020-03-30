@@ -1,30 +1,31 @@
 package io.github.erfangc.analysis
 
+import io.github.erfangc.analysis.models.Analysis
+import io.github.erfangc.analysis.models.AnalysisRequest
+import io.github.erfangc.analysis.models.AnalysisResponse
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.goalsengine.ClientGoalsTranslatorService
-import io.github.erfangc.goalsengine.GoalsEngine
-import io.github.erfangc.goalsengine.TranslateClientGoalsRequest
-import io.github.erfangc.goalsengine.portfoliochoices.PortfolioChoices
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisRequest
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisResponse
+import io.github.erfangc.goalsengine.internal.GoalsEngine
+import io.github.erfangc.goalsengine.models.TranslateClientGoalsRequest
+import io.github.erfangc.goalsengine.models.PortfolioChoices
+import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysis
+import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysisRequest
+import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysisResponse
 import io.github.erfangc.marketvalueanalysis.MarketValueAnalysisService
-import io.github.erfangc.portfolios.Portfolio
-import io.github.erfangc.proposals.models.GenerateProposalRequest
-import io.github.erfangc.scenarios.ScenariosAnalysisRequest
+import io.github.erfangc.portfolios.models.Portfolio
+import io.github.erfangc.scenarios.models.ScenariosAnalysisRequest
 import io.github.erfangc.scenarios.ScenariosService
 import io.github.erfangc.simulatedperformance.SimulatedPerformanceService
 import io.github.erfangc.simulatedperformance.models.MaximumDrawdown
 import io.github.erfangc.simulatedperformance.models.SimulatedPerformanceRequest
 import io.github.erfangc.simulatedperformance.models.SimulatedPerformanceResponse
 import io.github.erfangc.simulatedperformance.models.SummaryMetrics
-import io.github.erfangc.users.User
+import io.github.erfangc.users.models.User
 import io.github.erfangc.users.UserService
-import io.github.erfangc.util.PortfolioUtils.assetIds
+import io.github.erfangc.common.PortfolioUtils.assetIds
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.util.concurrent.Executors
 import kotlin.math.sqrt
 
 @Service

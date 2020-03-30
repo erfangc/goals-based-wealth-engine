@@ -5,6 +5,9 @@ import com.plaid.client.request.InstitutionsGetByIdRequest
 import com.plaid.client.request.InvestmentsHoldingsGetRequest
 import com.plaid.client.request.ItemPublicTokenExchangeRequest
 import com.plaid.client.response.InvestmentsHoldingsGetResponse
+import io.github.erfangc.portfolios.models.LinkItemResponse
+import io.github.erfangc.portfolios.models.Portfolio
+import io.github.erfangc.portfolios.models.Source
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Instant

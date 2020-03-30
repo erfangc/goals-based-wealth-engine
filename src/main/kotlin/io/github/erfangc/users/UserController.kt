@@ -1,5 +1,6 @@
 package io.github.erfangc.users
 
+import io.github.erfangc.users.models.*
 import org.springframework.web.bind.annotation.*
 
 @RestController

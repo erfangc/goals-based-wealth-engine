@@ -1,5 +1,7 @@
 package io.github.erfangc.scenarios
 
+import io.github.erfangc.scenarios.models.ScenarioAnalysisResponse
+import io.github.erfangc.scenarios.models.ScenariosAnalysisRequest
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping

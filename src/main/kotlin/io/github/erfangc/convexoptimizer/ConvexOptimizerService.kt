@@ -4,15 +4,18 @@ import ilog.concert.IloNumExpr
 import ilog.concert.IloObjectiveSense
 import ilog.concert.IloRange
 import ilog.cplex.IloCplex
-import io.github.erfangc.analysis.AnalysisRequest
+import io.github.erfangc.analysis.models.AnalysisRequest
 import io.github.erfangc.analysis.AnalysisService
 import io.github.erfangc.assets.AssetService
-import io.github.erfangc.convexoptimizer.PositionConstraintBuilder.positionConstraints
-import io.github.erfangc.convexoptimizer.PositionVariablesFactory.positionVars
-import io.github.erfangc.convexoptimizer.SolutionParser.parseSolution
+import io.github.erfangc.convexoptimizer.internal.OptimizationContext
+import io.github.erfangc.convexoptimizer.internal.PositionConstraintBuilder.positionConstraints
+import io.github.erfangc.convexoptimizer.internal.PositionVariablesFactory.positionVars
+import io.github.erfangc.convexoptimizer.internal.SolutionParser.parseSolution
+import io.github.erfangc.convexoptimizer.internal.VarianceExpressionBuilder
+import io.github.erfangc.convexoptimizer.models.*
 import io.github.erfangc.covariance.CovarianceService
 import io.github.erfangc.expectedreturns.ExpectedReturnsService
-import io.github.erfangc.marketvalueanalysis.MarketValueAnalysis
+import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysis
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 

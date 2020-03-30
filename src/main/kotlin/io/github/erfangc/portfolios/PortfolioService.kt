@@ -2,6 +2,7 @@ package io.github.erfangc.portfolios
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.erfangc.portfolios.models.Portfolio
 import io.github.erfangc.users.UserService
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Service

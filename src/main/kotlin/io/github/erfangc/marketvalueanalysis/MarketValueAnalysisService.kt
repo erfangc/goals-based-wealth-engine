@@ -1,9 +1,10 @@
 package io.github.erfangc.marketvalueanalysis
 
-import io.github.erfangc.assets.Asset
+import io.github.erfangc.assets.models.Asset
 import io.github.erfangc.assets.AssetService
-import io.github.erfangc.portfolios.Position
-import io.github.erfangc.util.PortfolioUtils.assetIds
+import io.github.erfangc.portfolios.models.Position
+import io.github.erfangc.common.PortfolioUtils.assetIds
+import io.github.erfangc.marketvalueanalysis.models.*
 import org.springframework.stereotype.Service
 
 @Service
@@ -94,7 +95,7 @@ class MarketValueAnalysisService(private val assetService: AssetService) {
                         netAssetValue = netAssetValue,
                         netAssetValues = netAssetValues,
                         weights = weights,
-                        weightsToAllInvestments =  weightsToAllInvestments,
+                        weightsToAllInvestments = weightsToAllInvestments,
                         allocations = allocations,
                         marketValue = marketValues
                 ),

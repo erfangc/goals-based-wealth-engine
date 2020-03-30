@@ -1,5 +1,6 @@
 package io.github.erfangc.portfolios
 
+import io.github.erfangc.portfolios.models.Portfolio
 import org.springframework.web.bind.annotation.*
 
 @RestController
