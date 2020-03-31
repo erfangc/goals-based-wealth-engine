@@ -2,6 +2,8 @@ package io.github.erfangc.assets.internal
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
+import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement
+import com.amazonaws.services.simplesystemsmanagement.model.GetParameterRequest
 import org.apache.http.HttpHost
 import org.apache.http.client.HttpClient
 import org.apache.http.impl.client.HttpClientBuilder
@@ -24,10 +26,14 @@ class AssetsConfiguration {
     }
 
     @Bean
-    fun restHighlevelClient(): RestHighLevelClient {
+    fun restHighlevelClient(ssm: AWSSimpleSystemsManagement): RestHighLevelClient {
+        val elasticsearchHost = System.getenv("ELASTICSEARCH_HOST") ?: ssm
+                .getParameter(GetParameterRequest().withName("/wealth-engine/elasticsearch-host"))
+                .parameter
+                .value
         return RestHighLevelClient(
                 RestClient.builder(
-                        HttpHost("localhost", 9200, "http")
+                        HttpHost(elasticsearchHost, 9200, "http")
                 )
         )
     }
