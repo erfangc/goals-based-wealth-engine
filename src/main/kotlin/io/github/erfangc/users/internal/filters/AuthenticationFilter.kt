@@ -28,6 +28,7 @@ class AuthenticationFilter(private val accessTokenProvider: AccessTokenProvider)
             val path = request.servletPath
             val allowedUrls = listOf(
                     "/apis/users/_sign-in",
+                    "/actuator/health",
                     "/apis/users/_reset-password",
                     "/apis/users/reset-password-tickets",
                     "/apis/users/_sign-up"
