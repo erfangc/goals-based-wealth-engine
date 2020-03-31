@@ -18,6 +18,7 @@ import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.collections.HashMap
 
 
 @Service
@@ -62,7 +63,13 @@ class UserService(private val ddb: AmazonDynamoDB,
     }
 
     fun saveUser(user: User): User {
-        ddb.putItem("users", toItem(user))
+        // make sure we do not override anything
+        val request = GetItemRequest("users", mapOf("id" to AttributeValue(user.id))).withAttributesToGet("password")
+        val password = ddb.getItem(request).item["password"]
+        val item = HashMap(toItem(user))
+        item["password"] = password
+
+        ddb.putItem("users", item)
         return user
     }
 
