@@ -15,6 +15,5 @@ internal class CovarianceServiceTest {
         val response = svc.computeCovariances(
                 assetIds = listOf("VTI", "VTI", "BND")
         )
-        response
     }
 }

@@ -5,7 +5,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest
 import io.github.erfangc.common.DynamoDBUtil.fromItem
 import io.github.erfangc.common.DynamoDBUtil.toItem
-import io.github.erfangc.users.internal.AccessTokenProvider.signAccessTokenFor
+import io.github.erfangc.users.internal.AccessTokenProvider
 import io.github.erfangc.users.models.*
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -15,7 +15,8 @@ import org.springframework.web.context.request.ServletRequestAttributes
 
 
 @Service
-class UserService(private val ddb: AmazonDynamoDB) {
+class UserService(private val ddb: AmazonDynamoDB,
+                  private val accessTokenProvider: AccessTokenProvider) {
 
     private val log = LoggerFactory.getLogger(UserService::class.java)
 
@@ -47,7 +48,7 @@ class UserService(private val ddb: AmazonDynamoDB) {
             val password = ddb.getItem(getItemRequest).item["password"]?.s
             if (BCrypt.checkpw(candidate, password)) {
                 val user = getUser(req.email)
-                return SignInResponse(accessToken = signAccessTokenFor(user))
+                return SignInResponse(accessToken = accessTokenProvider.signAccessTokenFor(user))
             } else {
                 throw RuntimeException("The credentials you provided do not match our records")
             }

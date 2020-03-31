@@ -1,4 +1,4 @@
-# Wealth engine
+# Wealth Engine
 
 Wealth Engine is a server that handles an advisor's workflow from connecting to accounts and automatically recommending
 portfolios to meet clients' investment goals and automatically reminding people to re-balance
@@ -6,10 +6,8 @@ portfolios to meet clients' investment goals and automatically reminding people 
 # Before you run the server check list
 
  - AWS AccessSecretKey and AccessKeyId to the correct account. We use DynamoDB to store assets / asset time series
- > Contact erfangc@gmail.com for an IAM user to get your accessKey
+ > Contact @erfangc for an IAM user to get your accessKey or IAM user
 
- - Run a PostgresSQL database locally, on the macOS you can download PostgreSQL [here](https://www.postgresql.org/download/macosx/)
- 
  - Ensure you have IntelliJ installed 
 
 # How to run the server
@@ -23,11 +21,6 @@ Required environment variables:
 # this VM arg is required for convex optimization to work
 # the ./bin directory is stored in Git LFS (large file storage)
 -Djava.library.path=./bin
-
-# in production use whatever works
-JDBC_DATABASE_URL=jdbc:postgresql://localhost:5432/erfangchen
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=
 ```
 
 In IntelliJ IDEA:
@@ -130,15 +123,12 @@ intermediate computations. These are enumerated below
 
 ## Time series data
 
-Example query:
-
-```
-wget https://query1.finance.yahoo.com/v7/finance/download/VXF?period1=1176163200&period2=1583366400&interval=1d&events=history&crumb=m6l2bRMEQLD
-```
+We can download price time series from Yahoo Finance over their chart API
 
 ## Cross sectional data
 
 We can useYahoo Finance for parsing cross sectional data (metadata data about funds / stocks etc). 
 
-See my repo [Here](https://github.com/erfangc/equity-valuation)
-Medium post [Here](https://medium.com/@erfangc/where-does-the-stock-market-think-society-is-headed-part-i-9e319a34d7db)
+ - Repo [Here](https://github.com/erfangc/equity-valuation)
+
+ - Medium post [Here](https://medium.com/@erfangc/where-does-the-stock-market-think-society-is-headed-part-i-9e319a34d7db)

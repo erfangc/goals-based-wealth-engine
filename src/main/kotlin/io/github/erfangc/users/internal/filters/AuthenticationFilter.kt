@@ -1,6 +1,6 @@
 package io.github.erfangc.users.internal.filters
 
-import io.github.erfangc.users.internal.AccessTokenProvider.parseAccessToken
+import io.github.erfangc.users.internal.AccessTokenProvider
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import javax.servlet.Filter
@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse
 
 @Component
 @Order(1)
-class AuthenticationFilter : Filter {
+class AuthenticationFilter(private val accessTokenProvider: AccessTokenProvider) : Filter {
 
     /**
      * Validate JWT tokens on the request
@@ -50,7 +50,7 @@ class AuthenticationFilter : Filter {
             } else {
                 val accessToken = parts[1]
                 try {
-                    val jws = parseAccessToken(accessToken)
+                    val jws = accessTokenProvider.parseAccessToken(accessToken)
                     // the user is authenticated
                     request.setAttribute("userId", jws.body.subject)
                     filterChain.doFilter(request, response)
