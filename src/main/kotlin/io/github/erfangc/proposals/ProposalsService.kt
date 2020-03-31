@@ -1,6 +1,5 @@
 package io.github.erfangc.proposals
 
-import io.github.erfangc.clients.models.Client
 import io.github.erfangc.convexoptimizer.ConvexOptimizerService
 import io.github.erfangc.convexoptimizer.models.*
 import io.github.erfangc.goalsengine.ClientGoalsTranslatorService
@@ -10,7 +9,10 @@ import io.github.erfangc.portfolios.PortfolioService
 import io.github.erfangc.portfolios.models.Portfolio
 import io.github.erfangc.portfolios.models.Position
 import io.github.erfangc.proposals.internal.WhiteListResolver
-import io.github.erfangc.proposals.models.*
+import io.github.erfangc.proposals.models.GenerateProposalRequest
+import io.github.erfangc.proposals.models.GenerateProposalResponse
+import io.github.erfangc.proposals.models.Proposal
+import io.github.erfangc.proposals.models.ResolveWhiteListItemRequest
 import io.github.erfangc.users.UserService
 import io.github.erfangc.users.models.ModelPortfolio
 import org.slf4j.LoggerFactory
@@ -21,7 +23,6 @@ import java.util.*
 @Service
 class ProposalsService(
         private val userService: UserService,
-        private val proposalAnalysisService: ProposalAnalysisService,
         private val goalsEngineService: GoalsEngineService,
         private val portfolioService: PortfolioService,
         private val clientGoalsTranslatorService: ClientGoalsTranslatorService,
@@ -44,45 +45,38 @@ class ProposalsService(
         val portfolioDefinitions = portfolioDefinitions(req)
         val portfolios = portfolioDefinitions.map { it.portfolio }
 
-        val optimizationResponse = when (req.client.goals?.approach) {
+        val (modelPortfolio, optimizationResponse) = when (req.client.goals?.approach) {
             "model portfolio" -> {
-
                 // if the client has an assigned model portfolio, do not run goals optimization, instead just run a probability
                 // analysis
                 val modelPortfolios = modelPortfolios()
-
                 if (req.client.goals.autoAssignModelPortfolio == true) {
-
                     // automatically choose a model portfolio
                     val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, modelPortfolios)
-                    constrainedTrackingErrorOptimization(goalsOutput, req)
-
+                    goalsOutput.modelPortfolio to constrainedTrackingErrorOptimization(goalsOutput, req)
                 } else {
-
-                    val modelPortfolio = modelPortfolios.filter { it.id == req.client.modelPortfolioId }
+                    val modelPortfolio = modelPortfolios.find { it.id == req.client.modelPortfolioId } ?: error("Model ${req.client.modelPortfolioId} does not appear to be defined in your settings")
                     // do not run simulation use the probability engine to derive the probability
                     // of reaching the client's goals
-                    val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, modelPortfolio)
-                    constrainedTrackingErrorOptimization(goalsOutput, req)
-
+                    val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, listOf(modelPortfolio))
+                    modelPortfolio to constrainedTrackingErrorOptimization(goalsOutput, req)
                 }
             }
             else -> {
-
                 // use efficient frontier
                 val goalsOutput = efficientFrontierBasedGoalsOptimization(req, portfolios)
-                constrainedMeanVarianceOptimization(goalsOutput, req)
-
+                null to constrainedMeanVarianceOptimization(goalsOutput, req)
             }
         }
 
         val proposal = Proposal(
                 id = UUID.randomUUID().toString(),
                 portfolios = portfolios,
-                proposedOrders = optimizationResponse.proposedOrders
+                proposedOrders = optimizationResponse.proposedOrders,
+                modelPortfolio = modelPortfolio
         )
 
-        return doPostOptimizationsAnalysis(proposal, req.client)
+        return GenerateProposalResponse(proposal = proposal)
     }
 
     private fun modelPortfolios(): List<ModelPortfolio> {
@@ -91,21 +85,6 @@ class ProposalsService(
                 .settings
                 .modelPortfolioSettings
                 .modelPortfolios
-    }
-
-    /**
-     * Perform any post goals / convex optimization step analysis (this is the simple stuff like computing the
-     * final portfolio's risk & returns)
-     */
-    private fun doPostOptimizationsAnalysis(proposal: Proposal, client: Client): GenerateProposalResponse {
-        val analyzeProposalResponse = proposalAnalysisService.analyze(AnalyzeProposalRequest(proposal, client))
-        return GenerateProposalResponse(
-                proposal = proposal,
-                analyses = analyzeProposalResponse.analyses,
-                proposedPortfolios = analyzeProposalResponse.proposedPortfolios,
-                assets = analyzeProposalResponse.assets
-        )
-
     }
 
     private fun modelPortfoliosBasedGoalsOptimization(req: GenerateProposalRequest,
@@ -245,3 +224,5 @@ class ProposalsService(
     }
 
 }
+
+public inline fun error(message: Any): Nothing = throw RuntimeException(message.toString())
