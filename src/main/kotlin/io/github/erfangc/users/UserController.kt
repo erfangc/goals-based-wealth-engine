@@ -25,4 +25,14 @@ class UserController(private val userService: UserService) {
     fun signIn(@RequestBody req: SignInRequest): SignInResponse {
         return userService.signIn(req)
     }
+
+    @PostMapping("reset-password-tickets")
+    fun createResetPasswordTicket(@RequestBody req: CreateResetPasswordTicketRequest): CreateResetPasswordTicketResponse {
+        return userService.createResetPasswordTicket(req)
+    }
+
+    @PostMapping("_reset-password")
+    fun resetPassword(@RequestBody req: ResetPasswordRequest): ResetPasswordResponse {
+        return userService.resetPassword(req)
+    }
 }

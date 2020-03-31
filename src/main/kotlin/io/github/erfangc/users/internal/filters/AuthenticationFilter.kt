@@ -26,7 +26,13 @@ class AuthenticationFilter(private val accessTokenProvider: AccessTokenProvider)
                 return
             }
             val path = request.servletPath
-            if (listOf("/apis/users/_sign-in", "/apis/users/_sign-up").contains(path)) {
+            val allowedUrls = listOf(
+                    "/apis/users/_sign-in",
+                    "/apis/users/_reset-password",
+                    "/apis/users/reset-password-tickets",
+                    "/apis/users/_sign-up"
+            )
+            if (allowedUrls.contains(path)) {
                 // sign in and sign-up are allowed unauthenticated
                 filterChain.doFilter(request, response)
             } else {
