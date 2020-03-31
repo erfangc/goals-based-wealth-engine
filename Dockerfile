@@ -5,4 +5,4 @@ ADD bin /app/bin
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar","/app/wealth-engine.jar", "-Djava.library.path", "/app/bin"]
+ENTRYPOINT ["java", "-Djava.library.path", "/app/bin", "-jar", "/app/wealth-engine.jar"]
