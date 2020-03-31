@@ -1,4 +1,4 @@
-package io.github.erfangc.assets.internal.parser.universeproviders
+package io.github.erfangc.assets.internal.universeproviders
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.erfangc.assets.yfinance.YFinanceFundAssetParser
@@ -7,6 +7,7 @@ import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import org.slf4j.LoggerFactory
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -25,6 +26,7 @@ class MutualFundTickersProvider(private val httpClient: HttpClient,
      * universe. For each imported ticker, we download both the time series of adjusted close
      * from Yahoo finance as well as other indicative data
      */
+    @Scheduled(cron = "0 6 * * 7 ?")
     fun run() {
         val page = AtomicInteger(1)
         val totalPages = AtomicInteger(1)

@@ -1,4 +1,4 @@
-package io.github.erfangc.assets.internal.parser
+package io.github.erfangc.assets.internal
 
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements

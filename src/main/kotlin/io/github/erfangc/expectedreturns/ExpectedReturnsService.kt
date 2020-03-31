@@ -4,9 +4,10 @@ import io.github.erfangc.assets.AssetService
 import io.github.erfangc.assets.AssetTimeSeriesService
 import io.github.erfangc.common.DateUtils.months
 import io.github.erfangc.common.DateUtils.mostRecentMonthEnd
+import io.github.erfangc.expectedreturns.internal.FrenchFamaFactorLevel
+import io.github.erfangc.expectedreturns.internal.FrenchFamaFactorsParser
 import io.github.erfangc.expectedreturns.models.ExpectedReturn
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
-import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -16,10 +17,9 @@ import java.time.temporal.ChronoField
 @Service
 class ExpectedReturnsService(
         private val assetTimeSeriesService: AssetTimeSeriesService,
-        private val assetService: AssetService
+        private val assetService: AssetService,
+        frenchFamaFactorsParser: FrenchFamaFactorsParser
 ) {
-
-    internal data class FactorLevel(val name: String, val date: LocalDate, val value: Double)
 
     companion object {
         val formatter: DateTimeFormatter = DateTimeFormatterBuilder()
@@ -28,70 +28,37 @@ class ExpectedReturnsService(
                 .toFormatter()!!
     }
 
-    /**
-     * Statically load the French Fama factors so we can quickly regress them
-     * against monthly returns
-     */
-    private val factorLevels = ClassPathResource("french-fama-3-factors.csv")
-            .inputStream
-            .bufferedReader()
-            .lineSequence()
-            .drop(1)
-            .toList()
-            .map { line ->
-                val parts = line.split(",")
-                val date = LocalDate.parse(parts[0], formatter)
-                val market = parts[1].trim().toDouble() / 100.0
-                val smb = parts[2].trim().toDouble() / 100.0
-                val hml = parts[3].trim().toDouble() / 100.0
-                val rf = parts[4].trim().toDouble() / 100.0
-                date to mapOf(
-                        // basically broad equity market performance
-                        "market" to FactorLevel(
-                                name = "market",
-                                date = date,
-                                value = market
-                        ),
-                        // small minus big
-                        "smb" to FactorLevel(
-                                name = "smb",
-                                date = date,
-                                value = smb
-                        ),
-                        // high minus low
-                        "hml" to FactorLevel(
-                                name = "hml",
-                                date = date,
-                                value = hml
-                        ),
-                        "rf" to FactorLevel(
-                                name = "rf",
-                                date = date,
-                                value = rf
-                        )
-                )
-            }
-            .toMap()
+    val factorLevels: Map<LocalDate, FrenchFamaFactorLevel> = frenchFamaFactorsParser.factorLevels()
+
+    internal data class FactorPremiums(
+            val mktMinusRf: Double = 0.0,
+            val smb: Double = 0.0,
+            val hml: Double = 0.0,
+            val rf: Double = 0.0
+    )
 
     /**
      * Compute factor premium looking back arbitrarily long
      */
-    private fun factorPremiums(): Map<String, Double> {
+    private fun factorPremiums(): FactorPremiums {
         val stop = mostRecentMonthEnd()
         // we take 30 years of history to compute factor premiums. long histories are needed
         // to avoid short-term fluctuations and instabilities
         val months = months(stop.minusYears(30), stop)
-        val totals = months
-                .fold(mapOf("market" to 0.0, "smb" to 0.0, "hml" to 0.0)) { acc, date ->
-                    mapOf(
-                            "market" to (acc["market"] ?: error("")) + (factorLevels[date]?.get("market")?.value
-                                    ?: error("")),
-                            "smb" to (acc["smb"] ?: error("")) + (factorLevels[date]?.get("smb")?.value ?: error("")),
-                            "hml" to (acc["hml"] ?: error("")) + (factorLevels[date]?.get("hml")?.value ?: error(""))
-                    )
-                }
+
         // take an average by dividing by the number of observations
-        return totals.mapValues { it.value / months.size }
+        return months.fold(FactorPremiums()) { acc, date ->
+            val mktMinusRf = factorLevels[date]?.mktMinusRf ?: 0.0
+            val rf = factorLevels[date]?.rf ?: 0.0
+            val smb = factorLevels[date]?.smb ?: 0.0
+            val hml = factorLevels[date]?.hml ?: 0.0
+            acc.copy(
+                    mktMinusRf = (acc.mktMinusRf + mktMinusRf / months.size),
+                    rf = (acc.rf + rf / months.size),
+                    smb = (acc.smb + smb / months.size),
+                    hml = (acc.hml + hml / months.size)
+            )
+        }
     }
 
     /**
@@ -126,18 +93,18 @@ class ExpectedReturnsService(
         val x = months.map { month ->
             val factorLevel = factorLevels[month] ?: throw IllegalStateException()
             doubleArrayOf(
-                    factorLevel["market"]?.value ?: error(""),
-                    factorLevel["smb"]?.value ?: error(""),
-                    factorLevel["hml"]?.value ?: error("")
+                    factorLevel.mktMinusRf,
+                    factorLevel.smb,
+                    factorLevel.hml
             )
         }.toTypedArray()
 
         // find the averages
         val factorPremiums = factorPremiums()
         val averages = doubleArrayOf(
-                factorPremiums["market"] ?: error(""),
-                factorPremiums["smb"] ?: error(""),
-                factorPremiums["hml"] ?: error("")
+                factorPremiums.mktMinusRf,
+                factorPremiums.smb,
+                factorPremiums.hml
         )
 
         val assets = assetService.getAssets(assetIds).associateBy { it.id }

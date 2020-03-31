@@ -1,4 +1,4 @@
-package io.github.erfangc.assets.internal.parser.universeproviders
+package io.github.erfangc.assets.internal.universeproviders
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper

@@ -2,10 +2,14 @@ package io.github.erfangc.scenarios
 
 import io.github.erfangc.assets.yfinance.YFinanceTimeSeriesDownloader
 import io.github.erfangc.scenarios.models.TimeSeriesDefinition
+import org.slf4j.LoggerFactory
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 
 @Service
 class TimeSeriesDefinitionService(private val yFinanceTimeSeriesDownloader: YFinanceTimeSeriesDownloader) {
+
+    private val log = LoggerFactory.getLogger(TimeSeriesDefinitionService::class.java)
 
     private val timeSeriesDefinitions = listOf(
             TimeSeriesDefinition(id = "^GSPC", name = "S&P 500", assetId = "^GSPC", description = "S&P 500"),
@@ -23,9 +27,10 @@ class TimeSeriesDefinitionService(private val yFinanceTimeSeriesDownloader: YFin
     /**
      * Downloads the latest time series data
      */
+    @Scheduled(cron = "0 24 * * 5 ?")
     fun downloadTimeSeries() {
-        timeSeriesDefinitions.forEach {
-            definition ->
+        log.info("Running ${this.javaClass.simpleName} as scheduled")
+        timeSeriesDefinitions.forEach { definition ->
             yFinanceTimeSeriesDownloader.downloadHistoryForTicker(ticker = definition.assetId, interval = "1mo", range = "10y", save = true)
         }
     }

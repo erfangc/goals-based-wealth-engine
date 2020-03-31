@@ -1,9 +1,10 @@
-package io.github.erfangc.assets.internal.parser.universeproviders
+package io.github.erfangc.assets.internal.universeproviders
 
 import io.github.erfangc.assets.yfinance.YFinanceFundAssetParser
 import io.github.erfangc.assets.yfinance.YFinanceTimeSeriesDownloader
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import kotlin.streams.toList
 
@@ -14,6 +15,7 @@ class VanguardTickerProvider(
 ) {
     private val log = LoggerFactory.getLogger(VanguardTickerProvider::class.java)
 
+    @Scheduled(cron = "0 22 * * 5 ?")
     fun run() {
         ClassPathResource("vanguard-etfs.csv")
                 .inputStream

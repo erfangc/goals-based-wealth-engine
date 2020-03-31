@@ -1,24 +1,28 @@
-package io.github.erfangc.assets.internal.parser.universeproviders
+package io.github.erfangc.assets.internal.universeproviders
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.github.erfangc.assets.yfinance.YFinanceFundAssetParser
+import io.github.erfangc.assets.yfinance.YFinanceStockAssetParser
 import io.github.erfangc.assets.yfinance.YFinanceTimeSeriesDownloader
 import org.apache.http.impl.client.HttpClientBuilder
 import org.junit.jupiter.api.Test
 
-internal class VanguardTickerProviderTest {
+internal class StockTickerProviderTest {
 
     @Test
     fun run() {
-        val objectMapper = jacksonObjectMapper().findAndRegisterModules()
+        val httpClient =  HttpClientBuilder.create().build()
         val ddb = AmazonDynamoDBClientBuilder.defaultClient()
-        val svc = VanguardTickerProvider(
-                yFinanceFundAssetParser = YFinanceFundAssetParser(ddb = ddb),
+        val objectMapper = jacksonObjectMapper().findAndRegisterModules()
+        val svc = StockTickerProvider(
                 yFinanceTimeSeriesDownloader = YFinanceTimeSeriesDownloader(
-                        httpClient = HttpClientBuilder.create().build(),
+                        httpClient = httpClient,
                         ddb = ddb,
                         objectMapper = objectMapper
+                ),
+                yFinanceStockAssetParser = YFinanceStockAssetParser(
+                        objectMapper = objectMapper,
+                        ddb = ddb
                 )
         )
         svc.run()

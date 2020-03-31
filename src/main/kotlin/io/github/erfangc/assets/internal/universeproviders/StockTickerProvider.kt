@@ -1,4 +1,4 @@
-package io.github.erfangc.assets.internal.parser.universeproviders
+package io.github.erfangc.assets.internal.universeproviders
 
 import io.github.erfangc.assets.yfinance.YFinanceStockAssetParser
 import io.github.erfangc.assets.yfinance.YFinanceTimeSeriesDownloader
@@ -6,6 +6,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.lang.Exception
 import java.util.concurrent.TimeUnit
@@ -15,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger
 class StockTickerProvider(private val yFinanceStockAssetParser: YFinanceStockAssetParser,
                           private val yFinanceTimeSeriesDownloader: YFinanceTimeSeriesDownloader) {
     private val log = LoggerFactory.getLogger(StockTickerProvider::class.java)
+
+    @Scheduled(cron = "0 22 * * 5 ?")
     fun run() {
         // pause 15 seconds per every 100 ticker processed
         val tempCounter = AtomicInteger(0)

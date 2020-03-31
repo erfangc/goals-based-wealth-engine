@@ -2,8 +2,8 @@ package io.github.erfangc.assets.yfinance
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import io.github.erfangc.assets.models.*
-import io.github.erfangc.assets.internal.parser.ParserUtil.parsePercentage
-import io.github.erfangc.assets.internal.parser.ParserUtil.parsePreviousClose
+import io.github.erfangc.assets.internal.ParserUtil.parsePercentage
+import io.github.erfangc.assets.internal.ParserUtil.parsePreviousClose
 import io.github.erfangc.common.DynamoDBUtil.toItem
 import org.jsoup.Jsoup
 import org.jsoup.select.Elements

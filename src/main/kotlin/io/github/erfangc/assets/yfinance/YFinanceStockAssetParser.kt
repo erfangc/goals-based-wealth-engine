@@ -7,7 +7,7 @@ import io.github.erfangc.assets.models.Allocations
 import io.github.erfangc.assets.models.Asset
 import io.github.erfangc.assets.models.AssetClassAllocation
 import io.github.erfangc.assets.models.GicsAllocation
-import io.github.erfangc.assets.internal.parser.ParserUtil.parsePreviousClose
+import io.github.erfangc.assets.internal.ParserUtil.parsePreviousClose
 import io.github.erfangc.common.DynamoDBUtil
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
