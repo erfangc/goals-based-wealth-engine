@@ -35,7 +35,7 @@ class AssetTimeSeriesService(private val ddb: AmazonDynamoDB) {
                     )
                     .withComparisonOperator(ComparisonOperator.BETWEEN)
             val items = ddb.query(
-                    QueryRequest("asset-prices-history")
+                    QueryRequest("asset-returns")
                             .withKeyConditions(mapOf(hashKeys, rangeKeys))
             ).items
             items.map { fromItem<TimeSeriesDatum>(it) }

@@ -66,7 +66,7 @@ class YFinanceTimeSeriesDownloader(private val httpClient: HttpClient,
         if (save) {
             val chunks = monthlyReturns.chunked(25)
             log.info("Writing time series for $ticker to database in ${chunks.size} chunks")
-            val tableName = "asset-prices-history"
+            val tableName = "asset-returns"
             chunks.forEachIndexed { idx, chunk ->
                 val requests = chunk.map { timeSeriesDatum -> WriteRequest(PutRequest(toItem(timeSeriesDatum))) }
                 val writeItemResult = ddb.batchWriteItem(mapOf(tableName to requests))
