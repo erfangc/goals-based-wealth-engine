@@ -1,9 +1,6 @@
 package io.github.erfangc.proposals
 
-import io.github.erfangc.proposals.models.DeleteProposalResponse
-import io.github.erfangc.proposals.models.GetProposalsByClientIdResponse
-import io.github.erfangc.proposals.models.SaveProposalRequest
-import io.github.erfangc.proposals.models.SaveProposalResponse
+import io.github.erfangc.proposals.models.*
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -17,6 +14,11 @@ class ProposalCrudController(private val proposalCrudService: ProposalCrudServic
     @GetMapping
     fun getProposalsByClientId(@PathVariable clientId: String): GetProposalsByClientIdResponse {
         return proposalCrudService.getProposalsByClientId(clientId)
+    }
+
+    @GetMapping("{proposalId}")
+    fun getProposal(@PathVariable clientId: String, @PathVariable proposalId: String): GetProposalResponse {
+        return proposalCrudService.getProposal(clientId, proposalId)
     }
 
     @DeleteMapping("{proposalId}")

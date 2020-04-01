@@ -25,6 +25,11 @@ class ProposalCrudService(private val ddb: AmazonDynamoDB,
         return SaveProposalResponse(proposal)
     }
 
+    fun getProposal(clientId: String, proposalId: String): GetProposalResponse {
+        val item = ddb.getItem("proposals", mapOf("id" to AttributeValue(proposalId))).item
+        return GetProposalResponse(fromItem(item))
+    }
+
     fun getProposalsByClientId(clientId: String): GetProposalsByClientIdResponse {
         val proposals = clientService
                 .getClient(clientId)
