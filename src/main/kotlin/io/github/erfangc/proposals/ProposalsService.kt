@@ -1,5 +1,6 @@
 package io.github.erfangc.proposals
 
+import io.github.erfangc.common.ErrorUtils.badInput
 import io.github.erfangc.convexoptimizer.ConvexOptimizerService
 import io.github.erfangc.convexoptimizer.models.*
 import io.github.erfangc.goalsengine.ClientGoalsTranslatorService
@@ -18,6 +19,7 @@ import io.github.erfangc.users.models.ModelPortfolio
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.util.StopWatch
+import java.time.Instant
 import java.util.*
 
 @Service
@@ -55,7 +57,8 @@ class ProposalsService(
                     val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, modelPortfolios)
                     goalsOutput.modelPortfolio to constrainedTrackingErrorOptimization(goalsOutput, req)
                 } else {
-                    val modelPortfolio = modelPortfolios.find { it.id == req.client.modelPortfolioId } ?: error("Model ${req.client.modelPortfolioId} does not appear to be defined in your settings")
+                    val modelPortfolio = modelPortfolios.find { it.id == req.client.modelPortfolioId }
+                            ?: badInput("Model ${req.client.modelPortfolioId} does not appear to be defined in your settings")
                     // do not run simulation use the probability engine to derive the probability
                     // of reaching the client's goals
                     val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, listOf(modelPortfolio))
@@ -73,7 +76,10 @@ class ProposalsService(
                 id = UUID.randomUUID().toString(),
                 portfolios = portfolios,
                 proposedOrders = optimizationResponse.proposedOrders,
-                modelPortfolio = modelPortfolio
+                modelPortfolio = modelPortfolio,
+                createdAt = Instant.now().toString(),
+                updatedAt = Instant.now().toString(),
+                clientId = req.client.id
         )
 
         return GenerateProposalResponse(proposal = proposal)
@@ -217,12 +223,10 @@ class ProposalsService(
                 // get rid of any portfolios that might not have a position
                 .filter { it.portfolio.positions.isNotEmpty() }
         if (ret.isEmpty()) {
-            throw IllegalStateException("Unable to initiate optimization since the client has no existing holdings nor putting in new investments")
+            badInput("Unable to initiate optimization since the client has no existing holdings nor putting in new investments")
         } else {
             return ret
         }
     }
 
 }
-
-public inline fun error(message: Any): Nothing = throw RuntimeException(message.toString())

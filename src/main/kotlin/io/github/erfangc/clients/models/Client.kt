@@ -10,5 +10,6 @@ data class Client(
         val lastName: String,
         val email: String? = null,
         val birthDay: LocalDate? = null,
-        val portfolioIds: List<String> = emptyList()
+        val portfolioIds: List<String> = emptyList(),
+        val proposalIds: List<String> = emptyList()
 )

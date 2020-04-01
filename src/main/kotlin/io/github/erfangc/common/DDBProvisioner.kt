@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.model.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import javax.annotation.PostConstruct
 
 /**
  * Creates the DynamoDB tables necessary for the operation of this App
@@ -37,6 +38,11 @@ class DDBProvisioner(private val ddb: AmazonDynamoDB) {
         createTableWithHashKeyOnly("users")
         createTableWithHashKeyOnly("clients")
         createTableWithHashKeyOnly("portfolios")
+
+        //
+        // create a table to hold proposals & proposal analysis
+        //
+        createTableWithHashKeyOnly(tableName = "proposals")
     }
 
     private fun createTableWithHashAndRangeKey(tableName: String,
@@ -58,7 +64,7 @@ class DDBProvisioner(private val ddb: AmazonDynamoDB) {
             ddb.createTable(
                     CreateTableRequest(
                             tableName,
-                            listOf(KeySchemaElement(hashAttrName, KeyType.HASH), KeySchemaElement("date", KeyType.RANGE)))
+                            listOf(KeySchemaElement(hashAttrName, KeyType.HASH), KeySchemaElement(rangeAttrName, KeyType.RANGE)))
                             .withAttributeDefinitions(
                                     AttributeDefinition(hashAttrName, ScalarAttributeType.S),
                                     AttributeDefinition(rangeAttrName, ScalarAttributeType.S)

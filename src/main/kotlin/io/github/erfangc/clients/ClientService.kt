@@ -24,7 +24,7 @@ class ClientService(private val ddb: AmazonDynamoDB, private val userService: Us
         }
     }
 
-    fun getClient(id: String): Client? {
+    fun getClient(id: String): Client {
         val user = userService.currentUser()
         val notFoundException = RuntimeException("Unable to find client $id")
         val clientId = user.clientIds.find { it == id } ?: throw notFoundException
