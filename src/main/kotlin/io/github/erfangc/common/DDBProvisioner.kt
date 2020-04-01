@@ -16,6 +16,7 @@ class DDBProvisioner(private val ddb: AmazonDynamoDB) {
 
     private val log = LoggerFactory.getLogger(DDBProvisioner::class.java)
 
+    @PostConstruct
     fun init() {
         //
         // assets and time series table
