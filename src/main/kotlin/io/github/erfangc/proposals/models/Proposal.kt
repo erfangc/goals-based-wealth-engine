@@ -6,6 +6,8 @@ import io.github.erfangc.users.models.ModelPortfolio
 
 data class Proposal(
         val id: String,
+        val name: String,
+        val description: String? = null,
         val clientId: String,
         val portfolios: List<Portfolio>,
         val proposedOrders: List<ProposedOrder>,

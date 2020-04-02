@@ -74,6 +74,8 @@ class ProposalsService(
 
         val proposal = Proposal(
                 id = UUID.randomUUID().toString(),
+                name = req.proposalName,
+                description = req.proposalDescription,
                 portfolios = portfolios,
                 proposedOrders = optimizationResponse.proposedOrders,
                 modelPortfolio = modelPortfolio,

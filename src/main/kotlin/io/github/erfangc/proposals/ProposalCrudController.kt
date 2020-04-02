@@ -4,24 +4,29 @@ import io.github.erfangc.proposals.models.*
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/apis/clients/{clientId}/proposals")
+@RequestMapping("/apis")
 class ProposalCrudController(private val proposalCrudService: ProposalCrudService) {
-    @PostMapping
+    @GetMapping("users/proposals")
+    fun getProposalsForCurrentUser(): GetProposalsForCurrentUser {
+        return proposalCrudService.getProposalsForCurrentUser()
+    }
+
+    @PostMapping("clients/{clientId}/proposals")
     fun saveProposal(@PathVariable clientId: String, @RequestBody req: SaveProposalRequest): SaveProposalResponse {
         return proposalCrudService.saveProposal(clientId, req)
     }
 
-    @GetMapping
+    @GetMapping("clients/{clientId}/proposals")
     fun getProposalsByClientId(@PathVariable clientId: String): GetProposalsByClientIdResponse {
         return proposalCrudService.getProposalsByClientId(clientId)
     }
 
-    @GetMapping("{proposalId}")
+    @GetMapping("clients/{clientId}/proposals/{proposalId}")
     fun getProposal(@PathVariable clientId: String, @PathVariable proposalId: String): GetProposalResponse {
         return proposalCrudService.getProposal(clientId, proposalId)
     }
 
-    @DeleteMapping("{proposalId}")
+    @DeleteMapping("clients/{clientId}/proposals/{proposalId}")
     fun deleteProposal(@PathVariable clientId: String, @PathVariable proposalId: String): DeleteProposalResponse {
         return proposalCrudService.deleteProposal(clientId, proposalId)
     }

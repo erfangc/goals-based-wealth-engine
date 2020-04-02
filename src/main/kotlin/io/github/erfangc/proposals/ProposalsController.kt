@@ -12,7 +12,14 @@ class ProposalsController(private val proposalsService: ProposalsService, privat
     @PostMapping("/apis/clients/{clientId}/_generate-proposal")
     fun generateProposal(@PathVariable clientId: String,
                          @RequestBody req: GenerateProposalGivenClientIdRequest): GenerateProposalResponse {
-        val client = clientService.getClient(clientId) ?: throw RuntimeException("cannot find client $clientId")
-        return proposalsService.generateProposal(GenerateProposalRequest(client, req.newInvestment))
+        val client = clientService.getClient(clientId)
+        return proposalsService.generateProposal(
+                GenerateProposalRequest(
+                        client = client,
+                        newInvestment = req.newInvestment,
+                        proposalName = req.proposalName,
+                        proposalDescription = req.proposalDescription
+                )
+        )
     }
 }

@@ -6,12 +6,24 @@ import io.github.erfangc.clients.ClientService
 import io.github.erfangc.common.DynamoDBUtil.fromItem
 import io.github.erfangc.common.DynamoDBUtil.toItem
 import io.github.erfangc.proposals.models.*
+import io.github.erfangc.users.UserService
 import org.springframework.stereotype.Service
 import java.time.Instant
 
 @Service
-class ProposalCrudService(private val ddb: AmazonDynamoDB,
-                          private val clientService: ClientService) {
+class ProposalCrudService(
+        private val ddb: AmazonDynamoDB,
+        private val userService: UserService,
+        private val clientService: ClientService
+) {
+
+    fun getProposalsForCurrentUser(): GetProposalsForCurrentUser {
+        val user = userService.currentUser()
+        val proposals = user.clientIds.flatMap {
+            clientId -> getProposalsByClientId(clientId).proposals
+        }
+        return GetProposalsForCurrentUser(proposals = proposals)
+    }
 
     fun saveProposal(clientId: String, req: SaveProposalRequest): SaveProposalResponse {
         val proposal = req.proposal.copy(clientId = clientId, updatedAt = Instant.now().toString())
