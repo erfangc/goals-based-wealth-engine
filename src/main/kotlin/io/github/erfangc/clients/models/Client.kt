@@ -6,6 +6,7 @@ data class Client(
         val id: String,
         val goals: Goals? = null,
         val modelPortfolioId: String? = null,
+        val automateProposal: Boolean? = null,
         val firstName: String,
         val lastName: String,
         val email: String? = null,

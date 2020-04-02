@@ -10,6 +10,5 @@ data class Goals(
         /**
          * this can either be 'efficient frontier' or 'model portfolio'
          */
-        val approach: String = "efficient frontier",
-        val autoAssignModelPortfolio: Boolean? = null
+        val approach: String = "efficient frontier"
 )

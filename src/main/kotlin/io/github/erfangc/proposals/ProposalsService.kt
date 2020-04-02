@@ -43,54 +43,64 @@ class ProposalsService(
      */
     fun generateProposal(req: GenerateProposalRequest): GenerateProposalResponse {
 
-        // resolve portfolios in-scope for this request
-        val portfolioDefinitions = portfolioDefinitions(req)
-        val portfolios = portfolioDefinitions.map { it.portfolio }
-        val modelPortfolios = modelPortfolios()
-
-        val (modelPortfolio, optimizationResponse) = if (req.client.modelPortfolioId != null && req.client.goals == null) {
-            val modelPortfolio = modelPortfolios.find { it.id == req.client.modelPortfolioId }
-                    ?: badInput("Model ${req.client.modelPortfolioId} does not appear to be defined in your settings")
-            modelPortfolio to constrainedTrackingErrorOptimization(modelPortfolio, req)
+        val (modelPortfolio, optimizationResponse) = if (req.client.automateProposal == false) {
+            manualProposal(req)
         } else {
-            when (req.client.goals?.approach) {
-                "model portfolio" -> {
-                    // if the client has an assigned model portfolio, do not run goals optimization, instead just run a probability
-                    // analysis
-                    if (req.client.goals.autoAssignModelPortfolio == true) {
-                        // automatically choose a model portfolio
-                        val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, modelPortfolios)
-                        goalsOutput.modelPortfolio to constrainedTrackingErrorOptimization(goalsOutput, req)
-                    } else {
-                        val modelPortfolio = modelPortfolios.find { it.id == req.client.modelPortfolioId }
-                                ?: badInput("Model ${req.client.modelPortfolioId} does not appear to be defined in your settings")
-                        // do not run simulation use the probability engine to derive the probability
-                        // of reaching the client's goals
-                        val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, listOf(modelPortfolio))
-                        modelPortfolio to constrainedTrackingErrorOptimization(goalsOutput, req)
-                    }
-                }
-                else -> {
-                    // use efficient frontier
-                    val goalsOutput = efficientFrontierBasedGoalsOptimization(req, portfolios)
-                    null to constrainedMeanVarianceOptimization(goalsOutput, req)
-                }
-            }
+            automatedProposal(req)
         }
 
+        val now = Instant.now()
         val proposal = Proposal(
                 id = UUID.randomUUID().toString(),
                 name = req.proposalName,
                 description = req.proposalDescription,
-                portfolios = portfolios,
+                portfolios = portfolioDefinitions(req).map { it.portfolio },
+                client = req.client,
                 proposedOrders = optimizationResponse.proposedOrders,
                 modelPortfolio = modelPortfolio,
-                createdAt = Instant.now().toString(),
-                updatedAt = Instant.now().toString(),
+                createdAt = now.toString(),
+                updatedAt = now.toString(),
                 clientId = req.client.id
         )
 
         return GenerateProposalResponse(proposal = proposal)
+    }
+
+    private fun automatedProposal(req: GenerateProposalRequest): Pair<ModelPortfolio?, ConvexOptimizationResponse> {
+        // resolve portfolios in-scope for this request
+        val portfolioDefinitions = portfolioDefinitions(req)
+        val portfolios = portfolioDefinitions.map { it.portfolio }
+        return when (req.client.goals?.approach) {
+            "model portfolio" -> {
+                val modelPortfolios = modelPortfolios()
+                // if the client has an assigned model portfolio, do not run goals optimization, instead just run a probability
+                // analysis
+                if (req.client.modelPortfolioId == null) {
+                    // automatically choose a model portfolio
+                    val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, modelPortfolios)
+                    goalsOutput.modelPortfolio to constrainedTrackingErrorOptimization(goalsOutput, req)
+                } else {
+                    val modelPortfolio = modelPortfolios.find { it.id == req.client.modelPortfolioId }
+                            ?: badInput("Model ${req.client.modelPortfolioId} does not appear to be defined in your settings")
+                    // do not run simulation use the probability engine to derive the probability
+                    // of reaching the client's goals
+                    val goalsOutput = modelPortfoliosBasedGoalsOptimization(req, portfolios, listOf(modelPortfolio))
+                    modelPortfolio to constrainedTrackingErrorOptimization(goalsOutput, req)
+                }
+            }
+            else -> {
+                // use efficient frontier
+                val goalsOutput = efficientFrontierBasedGoalsOptimization(req, portfolios)
+                null to constrainedMeanVarianceOptimization(goalsOutput, req)
+            }
+        }
+    }
+
+    private fun manualProposal(req: GenerateProposalRequest): Pair<ModelPortfolio, ConvexOptimizationResponse> {
+        val modelPortfolios = modelPortfolios()
+        val modelPortfolio = modelPortfolios.find { it.id == req.client.modelPortfolioId }
+                ?: badInput("Model ${req.client.modelPortfolioId} does not appear to be defined in your settings")
+        return modelPortfolio to constrainedTrackingErrorOptimization(modelPortfolio, req)
     }
 
     private fun modelPortfolios(): List<ModelPortfolio> {
