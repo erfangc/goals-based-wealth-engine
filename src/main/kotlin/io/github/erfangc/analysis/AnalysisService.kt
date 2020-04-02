@@ -43,6 +43,9 @@ class AnalysisService(
 
     private fun probabilityOfSuccess(req: AnalysisRequest, analysis: Analysis): Double? {
         val client = req.client ?: return null
+        if (client.goals == null) {
+            return null
+        }
         val (goal, initialInvestment, cashflows, investmentHorizon) = clientGoalsTranslatorService
                 .translate(TranslateClientGoalsRequest(client, req.portfolios))
         val riskReward = GoalsEngine(
