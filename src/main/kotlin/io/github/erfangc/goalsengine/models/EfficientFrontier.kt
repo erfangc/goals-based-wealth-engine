@@ -52,9 +52,9 @@ class EfficientFrontier(covarianceMatrix: Array<DoubleArray>, expectedReturns: D
             )
             .scalarMultiply(1.0 / divScalar)
 
-    private val a = h.transpose().multiply(sigma).multiply(h).getEntry(0, 0)
-    private val b = g.scalarMultiply(2.0).transpose().multiply(sigma).multiply(h).getEntry(0, 0)
-    private val c = g.transpose().multiply(sigma).multiply(g).getEntry(0, 0)
+    val a = h.transpose().multiply(sigma).multiply(h).getEntry(0, 0)
+    val b = g.scalarMultiply(2.0).transpose().multiply(sigma).multiply(h).getEntry(0, 0)
+    val c = g.transpose().multiply(sigma).multiply(g).getEntry(0, 0)
 
     override fun mus(): List<Double> {
         // starting a t-1, iterate on all mu(s) to find the max one

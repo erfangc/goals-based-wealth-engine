@@ -40,7 +40,7 @@ object SolutionParser {
                 }
                 .filter { it.quantity != 0.0 }
         // overlay the existing portfolio definitions (which includes any new portfolio created) with orders
-        return ConvexOptimizationResponse(proposedOrders = proposedOrders)
+        return ConvexOptimizationResponse(proposedOrders = proposedOrders, objectiveValue = ctx.cplex.objValue)
     }
 
     private fun quantity(targetMv: Double, asset: Asset): Double {

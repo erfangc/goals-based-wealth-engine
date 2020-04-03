@@ -1,3 +1,6 @@
 package io.github.erfangc.convexoptimizer.models
 
-data class ConvexOptimizationResponse(val proposedOrders: List<ProposedOrder>)
+data class ConvexOptimizationResponse(
+        val proposedOrders: List<ProposedOrder>,
+        val objectiveValue: Double
+)

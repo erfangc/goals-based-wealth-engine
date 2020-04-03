@@ -18,6 +18,7 @@ import io.github.erfangc.expectedreturns.ExpectedReturnsService
 import io.github.erfangc.marketvalueanalysis.models.MarketValueAnalysis
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.lang.Math.sqrt
 
 /**
  * ConvexOptimizerService performs build portfolios or modify existing portfolios
@@ -86,7 +87,6 @@ class ConvexOptimizerService(
     }
 
     /**
-     *
      */
     fun constrainedMeanVarianceOptimization(req: ConstrainedMeanVarianceOptimizationRequest): ConvexOptimizationResponse {
 
@@ -128,6 +128,7 @@ class ConvexOptimizerService(
             throw RuntimeException("The convex optimization problem cannot be solved")
         }
 
+        log.info("Mean-variance optimization completed, objective value: ${cplex.objValue}, sqrt(): ${sqrt(cplex.objValue)}")
         // parse the solution back into a portfolio / orders
         return parseSolution(ctx)
     }
