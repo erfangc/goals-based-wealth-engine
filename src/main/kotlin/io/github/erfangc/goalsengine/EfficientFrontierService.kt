@@ -2,6 +2,7 @@ package io.github.erfangc.goalsengine
 
 import io.github.erfangc.convexoptimizer.ConvexOptimizerService
 import io.github.erfangc.convexoptimizer.models.ConstrainedMeanVarianceOptimizationRequest
+import io.github.erfangc.convexoptimizer.models.ConvexOptimizationResponse
 import io.github.erfangc.convexoptimizer.models.Objectives
 import io.github.erfangc.convexoptimizer.models.PortfolioDefinition
 import io.github.erfangc.goalsengine.models.ConstructEfficientFrontierRequest
@@ -35,35 +36,29 @@ class EfficientFrontierService(
     private val executor = Executors.newFixedThreadPool(10)
 
     fun constructEfficientFrontier(req: ConstructEfficientFrontierRequest): ConstructEfficientFrontierResponse {
-        val cash = Position(id = "CASH-USD", assetId = "USD", quantity = 100_000.0)
         val requestTemplate = ConstrainedMeanVarianceOptimizationRequest(
                 portfolios = listOf(
                         PortfolioDefinition(
-                                portfolio = Portfolio(id = "", positions = listOf(cash)),
+                                portfolio = Portfolio(id = "", positions = listOf(cash())),
                                 whiteList = req.whiteList
                         )
                 ),
                 objectives = Objectives(expectedReturn = 0.02)
         )
         val requestAttributes = RequestContextHolder.currentRequestAttributes()
-        val sampleFutures: List<Future<Sample?>> = (2..10).map { returnTarget ->
+        val sampleFutures: List<Future<Sample?>> = (1..10).map { returnTarget ->
             val future: Future<Sample?> = executor.submit(Callable {
+                // RequestContextHolder must be given the request attributes of the current request
+                // from closure, so the executor's ThreadLocal contains the correct request level information
                 RequestContextHolder.setRequestAttributes(requestAttributes)
                 try {
                     val request = requestTemplate
-                            .copy(objectives = requestTemplate.objectives.copy(expectedReturn = returnTarget.div(100.0)))
+                            .copy(
+                                    objectives = requestTemplate.objectives.copy(expectedReturn = returnTarget.div(100.0))
+                            )
+
                     val optimizationResponse = convexOptimizerService.constrainedMeanVarianceOptimization(request)
-                    // convert optimization outcome to a portfolio
-                    val positions = optimizationResponse
-                            .proposedOrders
-                            .map { order ->
-                                if (order.assetId == "USD") {
-                                    Position(quantity = cash.quantity + order.quantity, assetId = order.assetId)
-                                } else {
-                                    Position(quantity = order.quantity, assetId = order.assetId)
-                                }
-                            }
-                    val portfolio = Portfolio(positions = positions)
+                    val portfolio = toPortfolio(optimizationResponse)
                     val objectiveValue = optimizationResponse.objectiveValue
 
                     // analyze said portfolio
@@ -75,6 +70,7 @@ class EfficientFrontierService(
                             portfolio = portfolio,
                             marketValueAnalysis = marketValueAnalysis
                     )
+                    // RequestContextHolder reset and cleaned up for the next task
                     RequestContextHolder.resetRequestAttributes()
                     ret
                 } catch (e: Exception) {
@@ -87,4 +83,20 @@ class EfficientFrontierService(
         val samples = sampleFutures.mapNotNull { it.get() }
         return ConstructEfficientFrontierResponse(samples = samples)
     }
+
+    private fun toPortfolio(optimizationResponse: ConvexOptimizationResponse): Portfolio {
+        // convert optimization outcome to a portfolio
+        val positions = optimizationResponse
+                .proposedOrders
+                .map { order ->
+                    if (order.assetId == "USD") {
+                        Position(quantity = cash().quantity + order.quantity, assetId = order.assetId)
+                    } else {
+                        Position(quantity = order.quantity, assetId = order.assetId)
+                    }
+                }
+        return Portfolio(positions = positions)
+    }
+
+    private fun cash() = Position(id = "CASH-USD", assetId = "USD", quantity = 100_000.0)
 }
