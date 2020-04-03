@@ -251,7 +251,7 @@ class ProposalsService(
                 // get rid of any portfolios that might not have a position
                 .filter { it.portfolio.positions.isNotEmpty() }
         if (ret.isEmpty()) {
-            badInput("Unable to initiate optimization since the client has no existing holdings nor putting in new investments")
+            badInput("Unable to initiate optimization since the client has no existing holdings or depositing new money to invest")
         } else {
             return ret
         }
