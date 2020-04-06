@@ -78,7 +78,8 @@ class ScenariosService(private val assetTimeSeriesService: AssetTimeSeriesServic
                     shocks.map { shock ->
                         marketDataTimeSeries[shock.timeSeriesId]
                                 ?.get(month)
-                                ?.value ?: 0.0
+                                // fallback to eom last month
+                                ?.value ?: marketDataTimeSeries[shock.timeSeriesId]?.get(month.minusDays(1))?.value ?: 0.0
                     }.toDoubleArray()
                 }.toTypedArray()
 
